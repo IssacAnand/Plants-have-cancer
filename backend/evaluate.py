@@ -33,49 +33,58 @@ def evaluate(
     criterion: nn.Module,
     cache:     CachedTextEmbeddings,
 ) -> dict:
-    """
-    Runs the model over every batch in loader (no gradients).
-
-    Returns
-    -------
-    dict with keys:
-        loss            — cross-entropy averaged over all samples
-        top1_accuracy   — fraction of samples where argmax == true label
-        top5_accuracy   — fraction of samples where true label is in top-5
-        macro_accuracy  — mean per-class accuracy (equal weight per class)
-    """
     model.eval()
 
+    num_classes     = cache.num_classes()
     total_loss      = 0.0
     correct_top1    = 0
     correct_top5    = 0
     n               = 0
-    num_classes     = cache.num_classes()
     per_class_hits  = torch.zeros(num_classes)
     per_class_total = torch.zeros(num_classes)
 
-    for images, label_ids in loader:
-        images    = images.to(DEVICE)
-        label_ids = label_ids.to(DEVICE)
+    # Pre-stack all text prototypes once — (num_classes, 768)
+    all_text_protos = cache.proto_matrix.to(DEVICE)
 
-        logits = model(images, label_ids, augment_text=False)
-        loss   = criterion(logits, label_ids)
+    for images, true_label_ids in loader:
+        images         = images.to(DEVICE)
+        true_label_ids = true_label_ids.to(DEVICE)
+        B              = images.shape[0]
 
-        total_loss   += loss.item() * len(label_ids)
-        correct_top1 += (logits.argmax(-1) == label_ids).sum().item()
+        # ── Image features (computed once per batch) ───────────────────────
+        vit_feats = model.vit(images)   # (B, 768)
+
+        # ── Score image against every class prototype ──────────────────────
+        # For class c: feed (vit_feats, text_proto_c) → MLP → take logit[c]
+        # This mirrors inference: no prior knowledge of the true class.
+        class_scores = torch.zeros(B, num_classes, device=DEVICE)
+
+        for c in range(num_classes):
+            text_feats    = all_text_protos[c].unsqueeze(0).expand(B, -1)  # (B, 768)
+            logits_c      = model.mlp(vit_feats, text_feats)               # (B, num_classes)
+            class_scores[:, c] = logits_c[:, c]
+
+        # ── Loss using true labels ─────────────────────────────────────────
+        loss = criterion(class_scores, true_label_ids)
+        total_loss += loss.item() * B
+
+        # ── Metrics ───────────────────────────────────────────────────────
+        preds = class_scores.argmax(-1)
+        correct_top1 += (preds == true_label_ids).sum().item()
 
         k    = min(5, num_classes)
-        top5 = logits.topk(k, dim=-1).indices
+        top5 = class_scores.topk(k, dim=-1).indices
         correct_top5 += sum(
-            true.item() in row.tolist() for true, row in zip(label_ids, top5)
+            true.item() in row.tolist()
+            for true, row in zip(true_label_ids, top5)
         )
 
-        for pred, true in zip(logits.argmax(-1).cpu(), label_ids.cpu()):
+        for pred, true in zip(preds.cpu(), true_label_ids.cpu()):
             per_class_total[true] += 1
             if pred == true:
                 per_class_hits[true] += 1
 
-        n += len(label_ids)
+        n += B
 
     macro_acc = (per_class_hits / per_class_total.clamp(min=1)).mean().item()
 
@@ -87,7 +96,7 @@ def evaluate(
     }
 
 
-# ── Load checkpoint helper (used by both train.py and evaluate.py) ────────────
+# ── Load checkpoint helper ────────────────────────────────────────────────────
 
 def load_checkpoint(
     model:     MultimodalDiseaseClassifier,
@@ -134,9 +143,6 @@ def run_predict(args):
     """
     Classifies a single image and prints the top-5 predicted disease classes.
     Called by main.py when --predict is set.
-
-    At inference there is no ground-truth label, so we run the model once for
-    every possible text prototype and take the class with the highest logit.
     """
     from PIL import Image
 
@@ -153,16 +159,17 @@ def run_predict(args):
     image = EVAL_TRANSFORMS(Image.open(args.predict).convert("RGB"))
     image = image.unsqueeze(0).to(DEVICE)   # (1, 3, 224, 224)
 
-    # Score each class by passing its text prototype through the model
-    scores = []
-    with torch.no_grad():
-        for lid in range(num_classes):
-            label_id = torch.tensor([lid], device=DEVICE)
-            logits   = model(image, label_id)          # (1, num_classes)
-            scores.append(logits[0, lid].item())
+    all_text_protos = cache.proto_matrix.to(DEVICE)
+    vit_feats       = model.vit(image)      # (1, 768)
 
-    scores = torch.tensor(scores)
-    top5   = scores.topk(min(5, num_classes))
+    scores = torch.zeros(num_classes, device=DEVICE)
+    with torch.no_grad():
+        for c in range(num_classes):
+            text_feats = all_text_protos[c].unsqueeze(0)  # (1, 768)
+            logits     = model.mlp(vit_feats, text_feats) # (1, num_classes)
+            scores[c]  = logits[0, c]
+
+    top5 = scores.topk(min(5, num_classes))
 
     print(f"\nImage  : {args.predict}")
     print(f"Dataset: {args.dataset}\n")
