@@ -62,12 +62,12 @@ def build_optimiser(model: MultimodalDiseaseClassifier) -> torch.optim.Optimizer
 
 # ── Scheduler ─────────────────────────────────────────────────────────────────
 
-def build_scheduler(optimiser: torch.optim.Optimizer, total_steps: int):
+def build_scheduler(optimiser: torch.optim.Optimizer, total_steps: int, steps_per_epoch: int):
     """
     Linear warmup for the first WARMUP_EPOCHS × steps_per_epoch steps,
     then cosine annealing to near-zero for the remainder.
     """
-    warmup_steps = max(1, total_steps // max(1, WARMUP_EPOCHS))
+    warmup_steps = max(1, steps_per_epoch * WARMUP_EPOCHS)
 
     warmup = LinearLR(optimiser, start_factor=0.1, end_factor=1.0,
                       total_iters=warmup_steps)
@@ -190,8 +190,9 @@ def run_training(args):
 
     # ── Optimiser / scheduler / loss ───────────────────────────────────────
     optimiser   = build_optimiser(model)
-    total_steps = len(train_loader) * args.epochs
-    scheduler   = build_scheduler(optimiser, total_steps)
+    steps_per_epoch = len(train_loader)
+    total_steps     = steps_per_epoch * args.epochs
+    scheduler       = build_scheduler(optimiser, total_steps, steps_per_epoch)
     criterion   = nn.CrossEntropyLoss(label_smoothing=0.1)
 
     # ── Resume ─────────────────────────────────────────────────────────────
