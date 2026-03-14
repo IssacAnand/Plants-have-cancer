@@ -75,7 +75,14 @@ def parse_args():
         type=str,
         default=None,
         metavar="IMAGE_PATH",
-        help="Classify a single image and print top-5 predictions",
+        help="Path to image for classification (use with --text)",
+    )
+    parser.add_argument(
+        "--text",
+        type=str,
+        default=None,
+        metavar="SYMPTOM_DESCRIPTION",
+        help="Symptom description to use alongside the image (use with --predict)",
     )
 
     return parser.parse_args()

@@ -155,6 +155,26 @@ class MultimodalDiseaseClassifier(nn.Module):
         # ── Fusion ─────────────────────────────────────────────────────────
         return self.mlp(vit_feats, text_feats)                      # (B, num_classes)
 
+    def forward_with_text(
+        self,
+        images:         torch.Tensor,   # (B, 3, 224, 224)
+        text_embedding: torch.Tensor,   # (768,) or (B, 768) — live user text
+    ) -> torch.Tensor:
+        """
+        Inference path for user-supplied text.
+        text_embedding comes from LiveTextEncoder.encode(), not the cache.
+
+        returns : (B, num_classes) logits
+        """
+        vit_feats  = self.vit(images)                              # (B, 768)
+
+        # Expand scalar embedding to match batch size if needed
+        if text_embedding.dim() == 1:
+            text_embedding = text_embedding.unsqueeze(0).expand(vit_feats.shape[0], -1)
+
+        text_feats = F.normalize(text_embedding.to(images.device), p=2, dim=-1)  # (B, 768)
+        return self.mlp(vit_feats, text_feats)                     # (B, num_classes)
+
     def trainable_params(self) -> dict:
         vit_p = sum(p.numel() for p in self.vit.parameters() if p.requires_grad)
         mlp_p = sum(p.numel() for p in self.mlp.parameters())

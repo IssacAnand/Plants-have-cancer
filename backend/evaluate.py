@@ -33,6 +33,21 @@ def evaluate(
     criterion: nn.Module,
     cache:     CachedTextEmbeddings,
 ) -> dict:
+    """
+    Runs the model over every batch in loader without using ground-truth labels
+    to look up text embeddings.
+
+    For each image the model is scored against EVERY class prototype and the
+    argmax is taken — identical to how run_predict() works on a single image.
+
+    Previously, true label_ids were passed directly into model(), which caused
+    the text branch to always receive the correct class embedding, massively
+    inflating all metrics.
+
+    Returns
+    -------
+    dict with keys: loss, top1_accuracy, top5_accuracy, macro_accuracy
+    """
     model.eval()
 
     num_classes     = cache.num_classes()
@@ -141,10 +156,23 @@ def run_evaluation(args):
 
 def run_predict(args):
     """
-    Classifies a single image and prints the top-5 predicted disease classes.
-    Called by main.py when --predict is set.
+    Classifies a single image + user symptom text.
+
+    Both modalities are required:
+      --predict  path/to/image.jpg
+      --text     "Leaves have brown spots and yellowing edges"
+
+    The user's text is encoded live by BERT (not a prototype lookup),
+    then fused with ViT image features by the MLP.
     """
     from PIL import Image
+    from bert_encoder import LiveTextEncoder
+
+    if not args.text:
+        raise ValueError(
+            "Symptom description required.\n"
+            "Use: python main.py --predict image.jpg --text \"describe symptoms\""
+        )
 
     cache       = CachedTextEmbeddings(args.dataset, Path(args.cache_dir))
     num_classes = cache.num_classes()
@@ -156,22 +184,23 @@ def run_predict(args):
     load_checkpoint(model, None, ckpt_path)
     model.eval()
 
+    # ── Encode image ──────────────────────────────────────────────────────
     image = EVAL_TRANSFORMS(Image.open(args.predict).convert("RGB"))
     image = image.unsqueeze(0).to(DEVICE)   # (1, 3, 224, 224)
 
-    all_text_protos = cache.proto_matrix.to(DEVICE)
-    vit_feats       = model.vit(image)      # (1, 768)
+    # ── Encode user text live with BERT ───────────────────────────────────
+    print(f"Encoding text: \"{args.text}\"")
+    text_encoder   = LiveTextEncoder()
+    text_embedding = text_encoder.encode(args.text)   # (768,) on CPU
 
-    scores = torch.zeros(num_classes, device=DEVICE)
+    # ── Single forward pass ───────────────────────────────────────────────
     with torch.no_grad():
-        for c in range(num_classes):
-            text_feats = all_text_protos[c].unsqueeze(0)  # (1, 768)
-            logits     = model.mlp(vit_feats, text_feats) # (1, num_classes)
-            scores[c]  = logits[0, c]
+        logits = model.forward_with_text(image, text_embedding)  # (1, num_classes)
 
-    top5 = scores.topk(min(5, num_classes))
+    top5 = logits[0].topk(min(5, num_classes))
 
     print(f"\nImage  : {args.predict}")
+    print(f"Text   : {args.text}")
     print(f"Dataset: {args.dataset}\n")
     print("Top-5 predictions:")
     for rank, (score, idx) in enumerate(

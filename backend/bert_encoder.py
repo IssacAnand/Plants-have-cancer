@@ -188,6 +188,41 @@ class CachedTextEmbeddings:
         return self._proto_matrix
 
 
+# ── Live text encoder for inference ──────────────────────────────────────────
+
+class LiveTextEncoder:
+    """
+    Encodes arbitrary user-supplied text at inference time.
+    Keeps the tokenizer and frozen BERT in memory.
+
+    Usage
+    -----
+        encoder = LiveTextEncoder()
+        embedding = encoder.encode("Leaves have brown spots and yellowing edges")
+        # embedding : (768,) tensor, L2-normalised, ready to pass to the MLP
+    """
+
+    def __init__(self, model_name: str = BERT_MODEL):
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model     = FrozenBERTEncoder(model_name).to(DEVICE)
+        self.model.eval()
+
+    @torch.no_grad()
+    def encode(self, text: str) -> torch.Tensor:
+        """
+        Encode a single string → (768,) L2-normalised tensor on CPU.
+        """
+        enc = self.tokenizer(
+            text,
+            max_length=MAX_LEN,
+            padding="max_length",
+            truncation=True,
+            return_tensors="pt",
+        ).to(DEVICE)
+        embedding = self.model.encode(enc["input_ids"], enc["attention_mask"])
+        return embedding.squeeze(0).cpu()   # (768,)
+
+
 # ── CLI (pre-computation entry point) ────────────────────────────────────────
 
 if __name__ == "__main__":
