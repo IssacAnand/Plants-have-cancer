@@ -68,3 +68,30 @@ class PlantWildDataset(Dataset):
         for _, label in self.samples:
             counts[label] += 1
         return counts
+    
+class PlantWildTextDataset(Dataset):
+    def __init__(self, df, tokenizer, max_length=128):
+        self.samples=df[["description", "label"]].values.tolist()
+        self.tokenizer=tokenizer
+        self.max_length=max_length
+
+        print(df.head())
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, index):
+        text, label = self.samples[index]
+        encoding = self.tokenizer(
+            text,
+            padding="max_length",
+            truncation=True,
+            max_length=self.max_length,
+            return_tensors="pt"
+        )
+
+        return {
+            "input_ids": encoding["input_ids"].squeeze(0),
+            "attention_mask": encoding["attention_mask"].squeeze(0),
+            "label": torch.tensor(label, dtype=torch.long)
+        }
