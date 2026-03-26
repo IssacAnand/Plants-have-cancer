@@ -225,7 +225,12 @@ if __name__ == "__main__":
     
     plt.tight_layout()
     
+    # Ensure the outputs directory exists
+    output_dir = "heatmap_outputs"
+    os.makedirs(output_dir, exist_ok=True)
+    
     safe_filename = disease.replace(' ', '_').replace('/', '_')
-    save_path = os.path.join("heatmap_outputs", f"xai_result_{safe_filename}.png")
+    save_path = os.path.join(output_dir, f"xai_result_{safe_filename}.png")
+    
     plt.savefig(save_path, dpi=300)
     print(f"\n✓ Saved final explainer visualization to {save_path}!")
