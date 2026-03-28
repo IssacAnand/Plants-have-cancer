@@ -17,34 +17,7 @@ import {
 } from "@expo-google-fonts/poppins";
 import { Search } from "lucide-react-native";
 
-// ─── Mock plant data ──────────────────────────────────────────────────────────
-// Replace with real data from the store once scanning is wired up.
-const PLANTS = [
-  {
-    id: "1",
-    name: "Monsterra",
-    status: "healthy",
-    isFavourite: false,
-    image: require("../../assets/monsterra.jpg"),
-    bgColor: "#c8f0d6",
-  },
-  {
-    id: "2",
-    name: "Sunflower",
-    status: "diseased",
-    isFavourite: false,
-    image: require("../../assets/sunflower.jpg"),
-    bgColor: "#fde68a",
-  },
-  {
-    id: "3",
-    name: "Bell Pepper",
-    status: "healthy",
-    isFavourite: true,
-    image: require("../../assets/bellpepper.jpg"),
-    bgColor: "#bbf7d0",
-  },
-];
+import usePlantStore from "../../store/usePlantStore";
 
 const CATEGORIES = ["All", "Healthy", "Diseased", "Favourites"];
 
@@ -58,8 +31,10 @@ export default function HomeScreen() {
 
   const [fontsLoaded] = useFonts({ Poppins_600SemiBold, Poppins_400Regular });
 
+  const plants = usePlantStore((s) => s.plants);
+
   // Filter by search text and active category tab
-  const filtered = PLANTS.filter((p) => {
+  const filtered = plants.filter((p) => {
     const matchesSearch = p.name
       .toLowerCase()
       .includes(search.toLowerCase());

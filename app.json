@@ -27,7 +27,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Plant Health Detector to access your camera to photograph plant leaves for disease detection."
+        }
+      ]
     ]
   }
 }

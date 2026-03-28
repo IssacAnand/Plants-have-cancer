@@ -1,139 +1,257 @@
-// app/results.jsx  — Results Screen
-//
-// ─────────────────────────────────────────────────────────────────────────────
-// CONCEPT: Composing data from multiple Zustand slices
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// This screen needs BOTH the image URI and the analysis result.
-// We pull each one separately from the store — Zustand only re-renders
-// the component when those specific values change.
-//
-// resetSession() clears both values so the next scan starts clean.
-// ─────────────────────────────────────────────────────────────────────────────
+// app/results.jsx — Diagnosis Results Screen
 
-import { View, Text, Image, ScrollView, SafeAreaView, TouchableOpacity } from "react-native";
+import { useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+} from "react-native";
 import { useRouter } from "expo-router";
+import {
+  useFonts,
+  Poppins_600SemiBold,
+  Poppins_400Regular,
+} from "@expo-google-fonts/poppins";
+import { Plus } from "lucide-react-native";
 
 import usePlantStore from "../store/usePlantStore";
-import PrimaryButton from "../components/PrimaryButton";
+
+const GREEN       = "#08AF4E";
+const TITLE_COLOR = "#561111";
+const TABS        = ["Diagnosis", "Explainability View", "Treatment"];
+
+const LOREM =
+  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
 export default function ResultsScreen() {
   const router = useRouter();
 
-  const capturedImageUri  = usePlantStore((s) => s.capturedImageUri);
-  const analysisResult    = usePlantStore((s) => s.analysisResult);
-  const resetSession      = usePlantStore((s) => s.resetSession);
+  const [activeTab,  setActiveTab]  = useState("Diagnosis");
+  const [fontsLoaded] = useFonts({ Poppins_600SemiBold, Poppins_400Regular });
 
-  // Guard: if we somehow arrive here with no result, go home
-  if (!analysisResult) {
-    router.replace("/(tabs)/index");
-    return null;
-  }
+  const capturedImageUri = usePlantStore((s) => s.capturedImageUri);
+  const analysisResult   = usePlantStore((s) => s.analysisResult);
+  const addPlant         = usePlantStore((s) => s.addPlant);
+  const resetSession     = usePlantStore((s) => s.resetSession);
 
-  const { disease, confidence, treatment } = analysisResult;
+  // Use real result when available, placeholder otherwise
+  const result = analysisResult ?? {
+    plantName:  "Monsterra",
+    disease:    "Light Blight with Sun Spots",
+    confidence: 97,
+  };
 
-  // Colour the confidence text based on how sure the model is
-  const confidenceColor =
-    confidence >= 80 ? "#16A34A" :   // green  — high confidence
-    confidence >= 60 ? "#D97706" :   // amber  — medium
-                       "#DC2626";    // red    — low
-
-  function handleNewScan() {
-    resetSession();              // clear photo + result from global state
-    router.replace("/(tabs)/scan"); // go straight to camera
-  }
-
-  function handleHome() {
+  function handleAddToFarm() {
+    addPlant({
+      id:          Date.now().toString(),
+      name:        result.plantName ?? "Unknown Plant",
+      status:      "diseased",
+      isFavourite: false,
+      image:       capturedImageUri ? { uri: capturedImageUri } : null,
+      bgColor:     "#fde68a",
+    });
     resetSession();
     router.replace("/(tabs)/index");
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      {/* ── Header ── */}
-      <View className="flex-row items-center px-6 py-4 border-b border-gray-100 bg-white">
-        <TouchableOpacity onPress={handleHome} className="mr-4">
-          <Text className="text-2xl">←</Text>
-        </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-800 flex-1 text-center">
-          Results
-        </Text>
-        <View className="w-8" />
-      </View>
-
+    <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ padding: 20 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        bounces={false}
       >
-        {/* ── Leaf photo thumbnail ── */}
-        {capturedImageUri && (
+        {/* ── Full-width photo, edge to edge ── */}
+        {capturedImageUri ? (
           <Image
             source={{ uri: capturedImageUri }}
-            className="w-full h-48 rounded-2xl bg-gray-100 mb-4"
+            style={{ width: "100%", aspectRatio: 9 / 10 }}
             resizeMode="cover"
           />
+        ) : (
+          <View
+            style={{
+              width: "100%", aspectRatio: 9 / 10,
+              backgroundColor: "#d1fae5",
+              alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <Text style={{ fontSize: 64 }}>🌿</Text>
+          </View>
         )}
 
-        {/* ── Result card ── */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          {/* Disease name */}
-          <Text className="text-xl font-bold" style={{ color: "#F97316" }}>
-            {disease}
-          </Text>
-
-          {/* Confidence */}
-          <Text className="text-base font-semibold mt-1" style={{ color: confidenceColor }}>
-            {confidence}% Confidence
-          </Text>
-
-          {/* Divider */}
-          <View className="h-px bg-gray-100 my-4" />
-
-          {/* Treatment section */}
-          <Text className="text-gray-500 text-xs uppercase tracking-widest mb-2 font-semibold">
-            Recommended Action
-          </Text>
-          <Text className="text-gray-700 text-base leading-relaxed">
-            {treatment}
-          </Text>
+        {/* ── Tabs — mirrors the category strip in index.jsx ── */}
+        <View
+          style={{
+            flexDirection: "row",
+            borderBottomWidth: 0.5,
+            borderBottomColor: "#e5e7eb",
+          }}
+        >
+          {TABS.map((tab) => {
+            const active = activeTab === tab;
+            return (
+              <TouchableOpacity
+                key={tab}
+                onPress={() => setActiveTab(tab)}
+                style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+                activeOpacity={0.7}
+              >
+                {/* Underline lives on the inner View so it only spans the text */}
+                <View
+                  style={{
+                    paddingHorizontal: active ? 4 : 0,
+                    paddingBottom: 6,
+                    paddingTop: 12,
+                    borderBottomWidth: active ? 2 : 0,
+                    borderBottomColor: GREEN,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fontsLoaded
+                        ? active ? "Poppins_600SemiBold" : "Poppins_400Regular"
+                        : undefined,
+                      fontSize: 11,
+                      color: active ? GREEN : "#9ca3af",
+                    }}
+                  >
+                    {tab}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* ── Confidence meter ── */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <Text className="text-gray-500 text-xs uppercase tracking-widest mb-3 font-semibold">
-            Detection Confidence
-          </Text>
-          {/* Track */}
-          <View className="h-3 bg-gray-100 rounded-full overflow-hidden">
-            {/* Fill — width is a percentage of confidence */}
-            <View
-              className="h-full rounded-full"
+        {/* ── Tab content ── */}
+        <View style={{ padding: 15 }}>
+
+          {activeTab === "Diagnosis" && (
+            <>
+              <Text
+                style={{
+                  fontFamily: fontsLoaded ? "Poppins_600SemiBold" : undefined,
+                  fontSize: 14,
+                  color: TITLE_COLOR,
+                  marginBottom: 8,
+                }}
+              >
+                {result.plantName ?? "Unknown Plant"}
+              </Text>
+
+              <Text
+                style={{
+                  fontFamily: fontsLoaded ? "Poppins_600SemiBold" : undefined,
+                  fontSize: 15,
+                  color: "#1f2937",
+                  marginBottom: 4,
+                }}
+              >
+                Predicted Disease: {result.disease}
+              </Text>
+
+              <Text
+                style={{
+                  fontFamily: fontsLoaded ? "Poppins_600SemiBold" : undefined,
+                  fontSize: 15,
+                  color: GREEN,
+                  marginBottom: 16,
+                }}
+              >
+                Confidence: {result.confidence}%
+              </Text>
+
+              <Text
+                style={{
+                  fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
+                  fontSize: 13,
+                  color: "#374151",
+                  lineHeight: 22,
+                }}
+              >
+                {LOREM}
+              </Text>
+            </>
+          )}
+
+          {activeTab === "Explainability View" && (
+            <Text
               style={{
-                width: `${confidence}%`,
-                backgroundColor: confidenceColor,
+                fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
+                fontSize: 13,
+                color: "#9ca3af",
+                textAlign: "center",
+                marginTop: 48,
               }}
-            />
-          </View>
-          <Text className="text-right text-sm font-bold mt-1" style={{ color: confidenceColor }}>
-            {confidence}%
-          </Text>
-        </View>
+            >
+              Explainability view coming soon.
+            </Text>
+          )}
 
-        {/* ── Offline badge ── */}
-        <View className="flex-row items-center bg-green-50 px-4 py-3 rounded-2xl border border-green-100 mb-6">
-          <Text className="text-xl mr-2">🛡</Text>
-          <View>
-            <Text className="text-green-700 font-semibold text-sm">Offline Mode Active</Text>
-            <Text className="text-green-600 text-xs">Analysis performed on-device</Text>
-          </View>
-        </View>
+          {activeTab === "Treatment" && (
+            <Text
+              style={{
+                fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
+                fontSize: 13,
+                color: "#9ca3af",
+                textAlign: "center",
+                marginTop: 48,
+              }}
+            >
+              Treatment recommendations coming soon.
+            </Text>
+          )}
 
-        {/* ── Actions ── */}
-        <PrimaryButton label="TAKE NEW SCAN" onPress={handleNewScan} />
-        <View className="h-3" />
-        <PrimaryButton label="GO HOME" onPress={handleHome} outline />
+        </View>
       </ScrollView>
-    </SafeAreaView>
+
+      {/* ── Add to My Farm — fixed at bottom ── */}
+      <SafeAreaView
+        style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          backgroundColor: "#ffffff",
+          paddingHorizontal: 40,
+          paddingTop: 10,
+          paddingBottom: 10,
+        }}
+      >
+        <TouchableOpacity
+          onPress={handleAddToFarm}
+          activeOpacity={0.85}
+          style={{
+            backgroundColor: GREEN,
+            borderRadius: 10,
+            paddingVertical: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: fontsLoaded ? "Poppins_600SemiBold" : undefined,
+              color: "#ffffff",
+              fontSize: 17,
+            }}
+          >
+            Add to My Farm
+          </Text>
+          <View
+            style={{
+              width: 26, height: 26, borderRadius: 13,
+              borderWidth: 2, borderColor: "#ffffff",
+              alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <Plus size={14} color="#ffffff" />
+          </View>
+        </TouchableOpacity>
+      </SafeAreaView>
+    </View>
   );
 }

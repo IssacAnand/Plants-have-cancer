@@ -27,6 +27,34 @@ const usePlantStore = create((set, get) => ({
 
   // ── State ──────────────────────────────────────────────────────────────────
 
+  /** Plants displayed on the My Farm home screen */
+  plants: [
+    {
+      id: "1",
+      name: "Monsterra",
+      status: "healthy",
+      isFavourite: false,
+      image: require("../assets/monsterra.jpg"),
+      bgColor: "#c8f0d6",
+    },
+    {
+      id: "2",
+      name: "Sunflower",
+      status: "diseased",
+      isFavourite: false,
+      image: require("../assets/sunflower.jpg"),
+      bgColor: "#fde68a",
+    },
+    {
+      id: "3",
+      name: "Bell Pepper",
+      status: "healthy",
+      isFavourite: true,
+      image: require("../assets/bellpepper.jpg"),
+      bgColor: "#bbf7d0",
+    },
+  ],
+
   /** URI (file path) of the photo the user just took with the camera */
   capturedImageUri: null,
 
@@ -82,6 +110,12 @@ const usePlantStore = create((set, get) => ({
     await saveRecentScan(scan);    // persist to device storage
     await get().loadRecentScans(); // update the in-memory list
   },
+
+  /**
+   * Adds a newly scanned plant to the My Farm list.
+   * @param {{ id, name, status, image, bgColor }} plant
+   */
+  addPlant: (plant) => set((state) => ({ plants: [...state.plants, plant] })),
 
   /**
    * Resets photo + result so the next scan starts clean.

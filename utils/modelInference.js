@@ -58,8 +58,9 @@ export async function analyzeLeaf(imageUri) {
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
   return {
-    disease: "Tomato Late Blight",
-    confidence: 87,
+    plantName:  "Monsterra",
+    disease:    "Light Blight with Sun Spots",
+    confidence: 97,
     treatment:
       "Remove infected leaves immediately. Apply a copper-based fungicide every 7–10 days. Avoid overhead watering and ensure good air circulation.",
   };
