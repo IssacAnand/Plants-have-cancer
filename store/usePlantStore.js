@@ -58,6 +58,9 @@ const usePlantStore = create((set, get) => ({
   /** URI (file path) of the photo the user just took with the camera */
   capturedImageUri: null,
 
+  /** Symptom description typed by the user on the preview screen */
+  capturedText: null,
+
   /**
    * The result returned by the AI model:
    * { disease: string, confidence: number, treatment: string }
@@ -83,6 +86,12 @@ const usePlantStore = create((set, get) => ({
   setCapturedImage: (uri) => set({ capturedImageUri: uri }),
 
   /**
+   * Called by the preview screen when the user taps "Get Diagnosis".
+   * @param {string} text  Symptom description entered by the user
+   */
+  setCapturedText: (text) => set({ capturedText: text }),
+
+  /**
    * Called by the processing screen after inference completes.
    * @param {{ disease, confidence, treatment }} result
    */
@@ -104,7 +113,7 @@ const usePlantStore = create((set, get) => ({
 
   /**
    * Saves a completed scan to AsyncStorage, then refreshes `recentScans`.
-   * @param {{ imageUri, disease, confidence, treatment, date }} scan
+   * @param {{ plantName, imageUri, symptomText, disease, confidence, treatment, date }} scan
    */
   addScan: async (scan) => {
     await saveRecentScan(scan);    // persist to device storage
@@ -121,7 +130,7 @@ const usePlantStore = create((set, get) => ({
    * Resets photo + result so the next scan starts clean.
    * Call this when the user taps "New Scan" on the results screen.
    */
-  resetSession: () => set({ capturedImageUri: null, analysisResult: null }),
+  resetSession: () => set({ capturedImageUri: null, capturedText: null, analysisResult: null }),
 }));
 
 export default usePlantStore;

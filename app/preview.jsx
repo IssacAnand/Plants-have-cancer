@@ -33,11 +33,16 @@ export default function PreviewScreen() {
   const [symptomText, setSymptomText] = useState("");
 
   const capturedImageUri = usePlantStore((s) => s.capturedImageUri);
+  const setCapturedText  = usePlantStore((s) => s.setCapturedText);
+  const isModelLoaded    = usePlantStore((s) => s.isModelLoaded);
 
   function handleGetDiagnosis() {
-    // TODO: pass symptomText to the model via the store when integration is ready
+    if (!capturedImageUri || !isModelLoaded) return;
+    setCapturedText(symptomText);
     router.replace("/processing");
   }
+
+  const canSubmit = Boolean(capturedImageUri) && isModelLoaded;
 
   return (
     <KeyboardAvoidingView
@@ -136,9 +141,10 @@ export default function PreviewScreen() {
         <View style={{ paddingHorizontal: 20, paddingBottom: 24, paddingTop: 8 }}>
           <TouchableOpacity
             onPress={handleGetDiagnosis}
-            activeOpacity={0.85}
+            activeOpacity={canSubmit ? 0.85 : 1}
+            disabled={!canSubmit}
             style={{
-              backgroundColor: GREEN,
+              backgroundColor: canSubmit ? GREEN : "#9ca3af",
               borderRadius: 10,
               paddingVertical: 16,
               alignItems: "center",
@@ -152,7 +158,11 @@ export default function PreviewScreen() {
                 fontSize: 18,
               }}
             >
-              Get Diagnosis
+              {!capturedImageUri
+                ? "Capture Image First"
+                : isModelLoaded
+                  ? "Get Diagnosis"
+                  : "Loading Model..."}
             </Text>
           </TouchableOpacity>
         </View>
