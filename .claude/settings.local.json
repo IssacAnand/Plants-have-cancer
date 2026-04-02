@@ -17,7 +17,10 @@
       "Bash(cat \"/tmp/plant-expo-ui/app/\\(tabs\\)/index.jsx\")",
       "Bash(cat \"/tmp/plant-expo-ui/app/\\(tabs\\)/scan.jsx\")",
       "Bash(ls /tmp/plant-expo-ui/app/\\\\\\(tabs\\\\\\)/)",
-      "Bash(ls \"/tmp/plant-expo-ui/app/\\(tabs\\)/\")"
+      "Bash(ls \"/tmp/plant-expo-ui/app/\\(tabs\\)/\")",
+      "Bash(python export_for_mobile.py)",
+      "Bash(python -c \":*)",
+      "Bash(find /c/Users/clifi/OneDrive/Documents/50.021 AI/Project/Plants-have-cancer/assets/models -type f -name *.onnx -o -name *.json)"
     ]
   }
 }

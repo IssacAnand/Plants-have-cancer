@@ -34,6 +34,7 @@ const MAX_SCANS = 5;
  * @param {{
  *   plantName:  string,   - user-facing name of the plant (e.g. "Sunflower")
  *   imageUri:   string,   - local file path of the captured image
+ *   symptomText:string,   - text entered by the user before diagnosis
  *   disease:    string,   - detected disease name
  *   confidence: number,   - 0–100 confidence percentage
  *   treatment:  string,   - recommended treatment text

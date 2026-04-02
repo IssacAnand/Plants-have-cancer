@@ -1,0 +1,21 @@
+# Local JavaScript dependencies
+node_modules
+
+# Local Python environment
+venv
+
+# Git metadata and local Expo state
+.git
+.expo
+
+# Android build outputs
+android/build
+android/app/build
+
+# Backend training artifacts and large checkpoints not needed for mobile build
+backend/checkpoints/trainer_tmp
+backend/checkpoints/*.pt
+backend/data
+backend/notebooks
+backend/__pycache__
+.claude

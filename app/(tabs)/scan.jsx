@@ -51,8 +51,9 @@ export default function DiagnosisScreen() {
 
   const [fontsLoaded] = useFonts({ Poppins_600SemiBold, Poppins_400Regular });
 
-  const recentScans    = usePlantStore((s) => s.recentScans);
+  const recentScans     = usePlantStore((s) => s.recentScans);
   const loadRecentScans = usePlantStore((s) => s.loadRecentScans);
+  const isModelLoaded   = usePlantStore((s) => s.isModelLoaded);
 
   useEffect(() => {
     loadRecentScans();
@@ -113,10 +114,11 @@ export default function DiagnosisScreen() {
         {/* ── Scan button ── */}
         <View style={{ paddingHorizontal: 20, marginBottom: 32 }}>
           <TouchableOpacity
-            onPress={() => router.push("/camera")}
-            activeOpacity={0.85}
+            onPress={() => isModelLoaded && router.push("/camera")}
+            activeOpacity={isModelLoaded ? 0.85 : 1}
+            disabled={!isModelLoaded}
             style={{
-              backgroundColor: GREEN,
+              backgroundColor: isModelLoaded ? GREEN : "#9ca3af",
               borderRadius: 10,
               paddingVertical: 16,
               flexDirection: "row",
@@ -131,11 +133,11 @@ export default function DiagnosisScreen() {
                 color: "#ffffff",
                 fontSize: 20,
               }}
-            >
-              Scan
-            </Text>
-            <Camera size={24} color="#ffffff" />
-          </TouchableOpacity>
+              >
+                {isModelLoaded ? "Scan" : "Loading Model..."}
+              </Text>
+              <Camera size={24} color="#ffffff" />
+            </TouchableOpacity>
         </View>
 
         {/* ── Scan History header ── */}

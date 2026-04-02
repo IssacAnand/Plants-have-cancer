@@ -31,11 +31,14 @@ export default function ProcessingScreen() {
 
   // Grab what we need from the store
   const capturedImageUri  = usePlantStore((state) => state.capturedImageUri);
+  const capturedText      = usePlantStore((state) => state.capturedText);
+  const isModelLoaded     = usePlantStore((state) => state.isModelLoaded);
   const setAnalysisResult = usePlantStore((state) => state.setAnalysisResult);
   const addScan           = usePlantStore((state) => state.addScan);
 
   // Animated value for the pulsing circle
-  const pulse = useRef(new Animated.Value(1)).current;
+  const pulse      = useRef(new Animated.Value(1)).current;
+  const hasStarted = useRef(false);
 
   // ── Pulse animation ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -56,21 +59,29 @@ export default function ProcessingScreen() {
       return;
     }
 
+    if (!isModelLoaded || hasStarted.current) {
+      return;
+    }
+
+    hasStarted.current = true;
+
     async function runInference() {
       try {
-        // analyzeLeaf() runs the PyTorch model — may take 50–500ms
-        const result = await analyzeLeaf(capturedImageUri);
+        // analyzeLeaf() runs three ONNX sessions (image + text + MLP)
+        const result = await analyzeLeaf(capturedImageUri, capturedText ?? "");
 
         // 1. Store the result so the Results screen can read it
         setAnalysisResult(result);
 
         // 2. Persist to history (AsyncStorage via Zustand action)
         await addScan({
-          imageUri:   capturedImageUri,
-          disease:    result.disease,
-          confidence: result.confidence,
-          treatment:  result.treatment,
-          date:       new Date().toISOString(),
+          plantName:   result.plantName,
+          imageUri:    capturedImageUri,
+          symptomText: capturedText ?? "",
+          disease:     result.disease,
+          confidence:  result.confidence,
+          treatment:   result.treatment,
+          date:        new Date().toISOString(),
         });
 
         // 3. Navigate to the Results screen
@@ -85,7 +96,7 @@ export default function ProcessingScreen() {
     }
 
     runInference();
-  }, []); // run once on mount
+  }, [addScan, capturedImageUri, capturedText, isModelLoaded, router, setAnalysisResult]);
 
   // ── UI ────────────────────────────────────────────────────────────────────
   return (
@@ -103,7 +114,7 @@ export default function ProcessingScreen() {
       </Text>
 
       <Text className="text-gray-500 text-center mt-3 text-base">
-        Analyzing leaf image…
+        {isModelLoaded ? "Analyzing leaf image and symptoms..." : "Loading AI model..."}
       </Text>
 
       <Text className="text-gray-400 text-center mt-1 text-sm">
@@ -114,6 +125,7 @@ export default function ProcessingScreen() {
       <View className="mt-10 w-full bg-white rounded-2xl p-5 shadow-sm">
         {[
           { label: "Loading image",          done: true  },
+          { label: "Preparing symptom text", done: Boolean(capturedText?.trim()) },
           { label: "Running AI model",       done: false },
           { label: "Preparing results",      done: false },
         ].map((step, i) => (

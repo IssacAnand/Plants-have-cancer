@@ -179,17 +179,44 @@ export default function ResultsScreen() {
           )}
 
           {activeTab === "Explainability View" && (
-            <Text
-              style={{
-                fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
-                fontSize: 13,
-                color: "#9ca3af",
-                textAlign: "center",
-                marginTop: 48,
-              }}
-            >
-              Explainability view coming soon.
-            </Text>
+            analysisResult?.heatmapUri ? (
+              <>
+                <Text
+                  style={{
+                    fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
+                    fontSize: 13,
+                    color: "#374151",
+                    lineHeight: 20,
+                    marginBottom: 12,
+                  }}
+                >
+                  Areas highlighted in red had the highest neural activation —
+                  these are the regions the model focused on when identifying
+                  the disease. Blue areas had low activation.
+                </Text>
+                <Image
+                  source={{ uri: analysisResult.heatmapUri }}
+                  style={{
+                    width: "100%",
+                    aspectRatio: 1,
+                    borderRadius: 12,
+                  }}
+                  resizeMode="cover"
+                />
+              </>
+            ) : (
+              <Text
+                style={{
+                  fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
+                  fontSize: 13,
+                  color: "#9ca3af",
+                  textAlign: "center",
+                  marginTop: 48,
+                }}
+              >
+                Heatmap not available for this scan.
+              </Text>
+            )
           )}
 
           {activeTab === "Treatment" && (
@@ -197,12 +224,12 @@ export default function ResultsScreen() {
               style={{
                 fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
                 fontSize: 13,
-                color: "#9ca3af",
-                textAlign: "center",
-                marginTop: 48,
+                color: "#374151",
+                lineHeight: 22,
               }}
             >
-              Treatment recommendations coming soon.
+              {analysisResult?.treatment
+                ?? "Treatment recommendations not available."}
             </Text>
           )}
 
