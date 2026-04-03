@@ -226,6 +226,56 @@ async function preprocessImage(imageUri) {
   return new Tensor("float32", float32, [1, 3, IMG_SIZE, IMG_SIZE]);
 }
 
+// ── BMP encoder (pure JS, no Buffer dependency) ──────────────────────────────
+
+/**
+ * Encode RGBA pixel data as a BMP image and return a data: URI.
+ * BMP is uncompressed so it's larger than JPEG, but avoids the
+ * jpeg-js Buffer dependency that crashes in React Native.
+ *
+ * @param {Uint8Array} rgba  Pixel data in RGBA order
+ * @param {number}     w     Width
+ * @param {number}     h     Height
+ * @returns {string}         "data:image/bmp;base64,…"
+ */
+function encodeBmp(rgba, w, h) {
+  const rowSize = Math.floor((24 * w + 31) / 32) * 4; // rows padded to 4 bytes
+  const pixelDataSize = rowSize * h;
+  const fileSize = 54 + pixelDataSize; // 14 (file header) + 40 (DIB header) + pixels
+
+  const buf = new Uint8Array(fileSize);
+  const view = new DataView(buf.buffer);
+
+  // ── File header (14 bytes) ──
+  buf[0] = 0x42; buf[1] = 0x4D;          // "BM"
+  view.setUint32(2, fileSize, true);       // file size
+  view.setUint32(10, 54, true);            // pixel data offset
+
+  // ── DIB header (40 bytes) ──
+  view.setUint32(14, 40, true);            // DIB header size
+  view.setInt32(18, w, true);              // width
+  view.setInt32(22, -h, true);             // height (negative = top-down)
+  view.setUint16(26, 1, true);             // color planes
+  view.setUint16(28, 24, true);            // bits per pixel (BGR)
+  view.setUint32(34, pixelDataSize, true); // image size
+
+  // ── Pixel data (BGR, bottom-up unless height is negative) ──
+  let offset = 54;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const src = (y * w + x) * 4;
+      buf[offset++] = rgba[src + 2]; // B
+      buf[offset++] = rgba[src + 1]; // G
+      buf[offset++] = rgba[src];     // R
+    }
+    // Pad row to 4-byte boundary
+    const pad = rowSize - w * 3;
+    for (let p = 0; p < pad; p++) buf[offset++] = 0;
+  }
+
+  return `data:image/bmp;base64,${encodeBase64(buf)}`;
+}
+
 // ── Heatmap from trained generator model ──────────────────────────────────────
 
 /**
@@ -247,9 +297,8 @@ function buildHeatmapFromModel(data, size) {
     rgba[i * 4 + 3] = 255;
   }
 
-  const encoded = jpeg.encode({ data: rgba, width: size, height: size }, 85);
-  const bytes = new Uint8Array(encoded.data);
-  return `data:image/jpeg;base64,${encodeBase64(bytes)}`;
+  // Encode as BMP (no external library needed, avoids Buffer dependency)
+  return encodeBmp(rgba, size, size);
 }
 
 // ── Heatmap generation (gradient-free mean-CAM) — fallback ────────────────────
@@ -335,12 +384,8 @@ function buildHeatmap(data, dims) {
     rgba[i * 4 + 3] = 255;
   }
 
-  // 5. JPEG encode via jpeg-js (same library used for decode)
-  const encoded = jpeg.encode({ data: rgba, width: OUT, height: OUT }, 85);
-
-  // 6. Uint8Array → base64 string (chunked to avoid call-stack overflow)
-  const bytes = new Uint8Array(encoded.data);
-  return `data:image/jpeg;base64,${encodeBase64(bytes)}`;
+  // 5. Encode as BMP (avoids jpeg-js Buffer dependency)
+  return encodeBmp(rgba, OUT, OUT);
 }
 
 // ── Post-processing helpers ───────────────────────────────────────────────────
@@ -427,17 +472,25 @@ export async function analyzeLeaf(imageUri, symptomText = "") {
   // ── 4. Heatmap (via trained heatmap generator model) ────────────────────────
   let heatmapUri = null;
 
-  try {
-    const heatmapOutput = await heatmapSession.run({ spatial_feat: spatialFeat });
-    // heatmapOutput["heatmap"] is (1, 1, 320, 320) with values in [0, 1]
-    const heatmapTensor = heatmapOutput["heatmap"];
-    heatmapUri = buildHeatmapFromModel(heatmapTensor.data, IMG_SIZE);
-  } catch (err) {
-    console.warn("[model] Heatmap generator failed, falling back to mean-CAM:", err);
+  if (heatmapSession) {
     try {
+      console.log("[model] Running heatmap generator, spatialFeat dims:", spatialFeat.dims);
+      const heatmapOutput = await heatmapSession.run({ spatial_feat: spatialFeat });
+      const heatmapTensor = heatmapOutput["heatmap"];
+      console.log("[model] Heatmap output dims:", heatmapTensor.dims);
+      heatmapUri = buildHeatmapFromModel(heatmapTensor.data, IMG_SIZE);
+      console.log("[model] Heatmap URI generated, length:", heatmapUri?.length);
+    } catch (err) {
+      console.warn("[model] Heatmap generator failed:", err);
+    }
+  }
+
+  if (!heatmapUri) {
+    try {
+      console.log("[model] Falling back to mean-CAM");
       heatmapUri = buildHeatmap(spatialFeat.data, spatialFeat.dims);
-    } catch (err2) {
-      console.warn("[model] Mean-CAM fallback also failed:", err2);
+    } catch (err) {
+      console.warn("[model] Mean-CAM fallback also failed:", err);
     }
   }
 

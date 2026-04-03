@@ -31,7 +31,7 @@ from tqdm import tqdm
 
 DEVICE     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 16
-EPOCHS     = 50
+EPOCHS     = 100
 LR         = 1e-3
 IMG_SIZE   = 320
 
@@ -132,9 +132,14 @@ def main():
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.5, patience=5
+        optimizer, mode='min', factor=0.5, patience=10
     )
-    criterion = nn.MSELoss()
+
+    # Weighted MSE: penalizes missing hot spots 10x more than false positives
+    # This prevents the model from learning "predict blue everywhere"
+    def weighted_mse(pred, target):
+        weight = 1.0 + 9.0 * target  # weight=1 for cold pixels, weight=10 for hot pixels
+        return (weight * (pred - target) ** 2).mean()
 
     best_val_loss = float('inf')
 
@@ -149,7 +154,7 @@ def main():
             targets = targets.to(DEVICE)
 
             preds = model(feats)
-            loss = criterion(preds, targets)
+            loss = weighted_mse(preds, targets)
 
             optimizer.zero_grad()
             loss.backward()
@@ -168,7 +173,7 @@ def main():
                 feats = feats.to(DEVICE)
                 targets = targets.to(DEVICE)
                 preds = model(feats)
-                val_loss += criterion(preds, targets).item() * feats.size(0)
+                val_loss += weighted_mse(preds, targets).item() * feats.size(0)
 
         val_loss /= n_val
         scheduler.step(val_loss)

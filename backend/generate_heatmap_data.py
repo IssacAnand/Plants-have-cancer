@@ -50,7 +50,7 @@ TEXT_MODEL_PATH  = "./checkpoints/best_text_encoder.pt"
 MLP_MODEL_PATH   = "./checkpoints/best_multimodal_mlp.pt"
 
 OUTPUT_DIR       = "./checkpoints/heatmap_training_data"
-MAX_SAMPLES      = 2000  # adjust based on your dataset size and time
+MAX_SAMPLES      = 5000  # more data helps the model learn better heatmap patterns
 
 # ── Model setup ───────────────────────────────────────────────────────────────
 
