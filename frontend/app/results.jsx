@@ -197,12 +197,12 @@ export default function ResultsScreen() {
                 <View style={{ width: "100%", aspectRatio: 1, borderRadius: 12, overflow: "hidden" }}>
                   <Image
                     source={{ uri: capturedImageUri }}
-                    style={{ width: "100%", height: "100%", position: "absolute" }}
+                    style={{ width: "100%", height: "100%", position: "absolute", opacity: 0.9 }}
                     resizeMode="cover"
                   />
                   <Image
                     source={{ uri: analysisResult.heatmapUri }}
-                    style={{ width: "100%", height: "100%", position: "absolute", opacity: 0.5 }}
+                    style={{ width: "100%", height: "100%", position: "absolute", opacity: 0.7 }}
                     resizeMode="cover"
                   />
                 </View>

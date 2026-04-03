@@ -287,9 +287,17 @@ function encodeBmp(rgba, w, h) {
  * @returns {string}           "data:image/jpeg;base64,…"
  */
 function buildHeatmapFromModel(data, size) {
+  // Normalize to full [0, 1] range so jet colormap spans blue → red
+  let lo = data[0], hi = data[0];
+  for (let i = 1; i < size * size; i++) {
+    if (data[i] < lo) lo = data[i];
+    if (data[i] > hi) hi = data[i];
+  }
+  const range = hi - lo || 1;
+
   const rgba = new Uint8Array(size * size * 4);
   for (let i = 0; i < size * size; i++) {
-    const val = Math.max(0, Math.min(1, data[i]));
+    const val = (data[i] - lo) / range;  // normalize to [0, 1]
     const [r, g, b] = jetColor(val);
     rgba[i * 4]     = r;
     rgba[i * 4 + 1] = g;
