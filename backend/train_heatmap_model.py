@@ -30,10 +30,11 @@ from tqdm import tqdm
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 DEVICE     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 EPOCHS     = 100
 LR         = 1e-3
 IMG_SIZE   = 320
+FEAT_SIZE  = 10   # spatial feature resolution from MobileViTv2
 
 DATA_DIR   = "./checkpoints/heatmap_training_data"
 SAVE_PATH  = "./checkpoints/best_heatmap_generator.pt"
@@ -46,50 +47,69 @@ class HeatmapGenerator(nn.Module):
     """
     Lightweight CNN that maps spatial features → heatmap.
 
+    Operates at the native feature resolution (10x10) then
+    upsamples to output size. This avoids the impossible task of
+    hallucinating 320x320 detail from 10x10 input.
+
     Architecture:
-      Conv2d (C → 128) → ReLU → Conv2d (128 → 64) → ReLU →
-      Conv2d (64 → 32) → ReLU → Conv2d (32 → 1) → Sigmoid →
+      Conv2d (C → 256) → ReLU → Dropout →
+      Conv2d (256 → 128) → ReLU → Dropout →
+      Conv2d (128 → 64) → ReLU →
+      Conv2d (64 → 1) → Sigmoid →
       Bilinear upsample to (320, 320)
     """
 
     def __init__(self, in_channels):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Conv2d(in_channels, 128, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Dropout2d(0.3),
+
+            nn.Conv2d(256, 128, kernel_size=3, padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(inplace=True),
+            nn.Dropout2d(0.3),
 
             nn.Conv2d(128, 64, kernel_size=3, padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
 
-            nn.Conv2d(64, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
-
-            nn.Conv2d(32, 1, kernel_size=1),
+            nn.Conv2d(64, 1, kernel_size=1),
             nn.Sigmoid(),
         )
 
-    def forward(self, spatial_feat):
+    def forward(self, spatial_feat, upsample=True):
         """
         Args:
             spatial_feat: (B, C, H, W) from image backbone
+            upsample: if True, upsample to (320, 320) for inference
         Returns:
-            heatmap: (B, 1, 320, 320)
+            heatmap: (B, 1, H, W) or (B, 1, 320, 320) if upsample=True
         """
         x = self.net(spatial_feat)
-        x = F.interpolate(x, size=(IMG_SIZE, IMG_SIZE), mode='bilinear',
-                          align_corners=False)
+        if upsample:
+            x = F.interpolate(x, size=(IMG_SIZE, IMG_SIZE), mode='bilinear',
+                              align_corners=False)
         return x
 
 
 # ── Dataset ───────────────────────────────────────────────────────────────────
 
 class HeatmapDataset(Dataset):
-    def __init__(self, spatial_feats, heatmaps):
+    def __init__(self, spatial_feats, heatmaps, target_size=None):
         self.spatial_feats = spatial_feats
-        self.heatmaps = heatmaps
+        # Downscale ground-truth heatmaps to match feature resolution
+        # This makes the task feasible: predict 10x10 from 10x10, not 320x320
+        if target_size and heatmaps.shape[-1] != target_size:
+            self.heatmaps = F.interpolate(
+                heatmaps, size=(target_size, target_size),
+                mode='bilinear', align_corners=False
+            )
+            print(f"  Downscaled heatmaps: {heatmaps.shape} → {self.heatmaps.shape}")
+        else:
+            self.heatmaps = heatmaps
 
     def __len__(self):
         return len(self.spatial_feats)
@@ -114,7 +134,8 @@ def main():
     print(f"  in_channels:   {in_channels}")
 
     # Train/val split (90/10)
-    dataset = HeatmapDataset(spatial_feats, heatmaps)
+    # Train at feature resolution (10x10), model upsamples to 320x320 at inference
+    dataset = HeatmapDataset(spatial_feats, heatmaps, target_size=FEAT_SIZE)
     n_val = max(1, int(len(dataset) * 0.1))
     n_train = len(dataset) - n_val
     train_set, val_set = random_split(dataset, [n_train, n_val],
@@ -153,7 +174,7 @@ def main():
             feats = feats.to(DEVICE)
             targets = targets.to(DEVICE)
 
-            preds = model(feats)
+            preds = model(feats, upsample=False)  # train at native 10x10
             loss = weighted_mse(preds, targets)
 
             optimizer.zero_grad()
@@ -172,7 +193,7 @@ def main():
             for feats, targets in val_loader:
                 feats = feats.to(DEVICE)
                 targets = targets.to(DEVICE)
-                preds = model(feats)
+                preds = model(feats, upsample=False)  # validate at native 10x10
                 val_loss += weighted_mse(preds, targets).item() * feats.size(0)
 
         val_loss /= n_val

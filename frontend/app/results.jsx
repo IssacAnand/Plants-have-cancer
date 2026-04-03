@@ -194,15 +194,18 @@ export default function ResultsScreen() {
                   these are the regions the model focused on when identifying
                   the disease. Blue areas had low activation.
                 </Text>
-                <Image
-                  source={{ uri: analysisResult.heatmapUri }}
-                  style={{
-                    width: "100%",
-                    aspectRatio: 1,
-                    borderRadius: 12,
-                  }}
-                  resizeMode="cover"
-                />
+                <View style={{ width: "100%", aspectRatio: 1, borderRadius: 12, overflow: "hidden" }}>
+                  <Image
+                    source={{ uri: capturedImageUri }}
+                    style={{ width: "100%", height: "100%", position: "absolute" }}
+                    resizeMode="cover"
+                  />
+                  <Image
+                    source={{ uri: analysisResult.heatmapUri }}
+                    style={{ width: "100%", height: "100%", position: "absolute", opacity: 0.5 }}
+                    resizeMode="cover"
+                  />
+                </View>
               </>
             ) : (
               <Text
