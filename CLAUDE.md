@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Plant Health Detector — a React Native (Expo) mobile app that lets users photograph plants and diagnose diseases. The ML backend is a multimodal pipeline (vision + text) trained in Python and exported to ONNX; the app runs fully offline inference via `onnxruntime-react-native`.
 
+<<<<<<< HEAD
 ## Development Commands
 
 ```bash
@@ -13,6 +14,40 @@ Plant Health Detector — a React Native (Expo) mobile app that lets users photo
 npm install
 
 # Start Expo dev server (scan QR with Expo Go app on same WiFi)
+=======
+## Project Structure
+
+```
+Plants-have-cancer/
+├── frontend/           # React Native (Expo) mobile app
+│   ├── app/            # Screens (Expo Router file-based routing)
+│   ├── assets/         # Images, ONNX models, label/treatment data
+│   ├── components/     # Reusable UI components
+│   ├── store/          # Zustand state management
+│   ├── utils/          # Inference, tokeniser, storage helpers
+│   ├── app.json        # Expo config
+│   ├── package.json    # JS dependencies
+│   └── ...
+├── backend/            # Python ML training & export
+│   ├── checkpoints/    # Trained model weights
+│   ├── data/           # Training images & text
+│   ├── notebooks/      # Jupyter notebooks
+│   └── *.py            # Training, export & heatmap scripts
+├── .gitignore
+└── README.md
+```
+
+## Development Commands
+
+```bash
+# ── Frontend ──────────────────────────────────────────────
+cd frontend
+
+# Install JS dependencies
+npm install
+
+# Start Expo dev server
+>>>>>>> q0q
 npm start
 
 # Platform-specific launchers
@@ -21,7 +56,11 @@ npm run ios
 npm run web
 ```
 
+<<<<<<< HEAD
 > **Note:** Real ML inference requires a native build (`npx expo run:android` / `npx expo run:ios`) because `onnxruntime-react-native` does not work with Expo Go.
+=======
+> **Note:** Real ML inference requires a native build (`npx expo run:android` / `npx expo run:ios`) because `onnxruntime-react-native` does not work with Expo Go. For cloud builds, use `eas build --profile development --platform ios` (requires Expo account + Apple Developer account for iOS).
+>>>>>>> q0q
 
 ### Python Backend (ML training)
 
@@ -37,6 +76,7 @@ python bert.py
 # Train fusion MLP (requires embeddings saved by the encoders above)
 python mlp.py
 
+<<<<<<< HEAD
 # Export all three trained models to ONNX + generate asset files
 python export_for_mobile.py
 
@@ -45,6 +85,22 @@ python generate_heatmap.py
 ```
 
 The backend requires CUDA and the packages in `backend/requirements.txt`. Use the project `venv/` or a fresh virtualenv. Training notebooks are in `backend/notebooks/`.
+=======
+# Generate training data for heatmap model (runs HiResCAM on training images)
+python generate_heatmap_data.py
+
+# Train heatmap generator CNN (learns to predict gradient-based heatmaps)
+python train_heatmap_model.py
+
+# Export all four models to ONNX + generate asset files
+python export_for_mobile.py
+
+# Generate standalone GradCAM visualisations (for research, not used by app)
+python generate_heatmap.py
+```
+
+The backend requires CUDA and the packages in `backend/requirements.txt`. Use the project `.venv-1/` or a fresh virtualenv. Training notebooks are in `backend/notebooks/`.
+>>>>>>> q0q
 
 ## Architecture
 
@@ -61,7 +117,11 @@ splash → (tabs)/index (Home)
          (tabs)/profile
 ```
 
+<<<<<<< HEAD
 Key files:
+=======
+Key files (all under `frontend/`):
+>>>>>>> q0q
 - `app/_layout.jsx` — root Stack navigator; bootstraps model load + scan history on mount
 - `app/(tabs)/_layout.jsx` — bottom tab bar
 - `store/usePlantStore.js` — Zustand store; single source of truth for `capturedImageUri`, `capturedText`, `analysisResult`, `recentScans`, `isModelLoaded`, and the `plants` list
@@ -94,6 +154,7 @@ Data JSON files (`backend/data/text/plantwild.json`) contain per-class disease d
 
 ### ONNX Export (`backend/export_for_mobile.py`)
 
+<<<<<<< HEAD
 Converts the three trained PyTorch models to ONNX and generates all asset files consumed by the app:
 
 | Output file | Description |
@@ -106,6 +167,34 @@ Converts the three trained PyTorch models to ONNX and generates all asset files 
 | `assets/models/tokenizer/vocab.json` | WordPiece vocabulary extracted from the fine-tuned BERT tokenizer |
 
 ### On-Device Inference (`utils/modelInference.js`)
+=======
+Converts the trained PyTorch models to ONNX and generates all asset files consumed by the app. All output goes to `frontend/assets/models/`:
+
+| Output file | Description |
+|---|---|
+| `image_backbone.onnx` | MobileViTv2_150 wrapped to return `img_emb (1,768)` + `spatial_feat (1,C,H,W)` |
+| `text_encoder.onnx` | agriculture-BERT [CLS] extractor, INT8-quantised |
+| `mlp.onnx` | Fusion MLP; inputs `img_emb`, `text_emb`; output `logits (1,89)` |
+| `heatmap_generator.onnx` | Small CNN; inputs `spatial_feat`; output `heatmap (1,1,320,320)` — trained to mimic HiResCAM |
+| `label_map.json` | `{ "class name": int }` — 89 classes |
+| `treatments.json` | `{ "class name": description }` — one treatment string per class |
+| `tokenizer/vocab.json` | WordPiece vocabulary extracted from the fine-tuned BERT tokenizer |
+
+### Heatmap Pipeline
+
+Two approaches exist:
+
+1. **Backend (research only):** `generate_heatmap.py` uses multi-layer HiResCAM with PyTorch gradients + contour mapping. Produces high-quality visualisations but requires PyTorch backward pass — cannot run on device.
+
+2. **On-device (production):** A small CNN (`heatmap_generator.onnx`) trained to mimic the gradient-based heatmaps using only forward-pass spatial features. Training pipeline:
+   - `generate_heatmap_data.py` — runs HiResCAM on training images to create (spatial_feat, heatmap) pairs
+   - `train_heatmap_model.py` — trains a 4-layer CNN on those pairs (MSE loss)
+   - `export_for_mobile.py` — exports the trained CNN to ONNX
+   
+   Falls back to gradient-free mean-CAM if the heatmap generator model fails.
+
+### On-Device Inference (`frontend/utils/modelInference.js`)
+>>>>>>> q0q
 
 Full offline pipeline — no network calls:
 
@@ -114,7 +203,11 @@ Full offline pipeline — no network calls:
 3. **Image session** → `img_emb (1,768)` + `spatial_feat`
 4. **Text session** → `text_emb (1,768)`
 5. **MLP session** → `logits (1,89)` → softmax → argmax → class label + treatment lookup
+<<<<<<< HEAD
 6. **Heatmap** — gradient-free mean-CAM from `spatial_feat`, bilinear upsample, jet colourmap, JPEG-encoded data URI
+=======
+6. **Heatmap session** → `spatial_feat` → `heatmap_generator.onnx` → jet-coloured JPEG data URI (fallback: mean-CAM)
+>>>>>>> q0q
 
 ## Critical Invariants
 

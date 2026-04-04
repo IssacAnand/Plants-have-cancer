@@ -271,8 +271,52 @@ def main():
           f"[CLS]={vocab.get('[CLS]')}, [SEP]={vocab.get('[SEP]')}, "
           f"[UNK]={vocab.get('[UNK]')}")
 
+<<<<<<< HEAD
     # ── 5. Label map + treatments ─────────────────────────────────────────────
     print("\n[5/5] Generating label_map.json and treatments.json …")
+=======
+    # ── 5. Heatmap generator CNN ─────────────────────────────────────────────
+    heatmap_ckpt = CHECKPOINTS / "best_heatmap_generator.pt"
+    if heatmap_ckpt.exists():
+        print("\n[5/7] Exporting heatmap generator …")
+
+        # Import the model class
+        sys.path.insert(0, str(Path(__file__).parent))
+        from train_heatmap_model import HeatmapGenerator
+
+        ckpt = torch.load(heatmap_ckpt, map_location="cpu")
+        in_channels = ckpt["in_channels"]
+
+        heatmap_model = HeatmapGenerator(in_channels=in_channels)
+        heatmap_model.load_state_dict(ckpt["model_state_dict"])
+        heatmap_model.eval()
+
+        # Use same spatial dimensions as the backbone output
+        with torch.no_grad():
+            dummy_spatial = torch.randn(1, in_channels, 10, 10)
+            test_out = heatmap_model(dummy_spatial)
+        print(f"  input:  (1, {in_channels}, H, W)")
+        print(f"  output: {tuple(test_out.shape)}")
+
+        heatmap_onnx = OUT_DIR / "heatmap_generator.onnx"
+        torch.onnx.export(
+            heatmap_model, dummy_spatial, str(heatmap_onnx),
+            input_names=["spatial_feat"],
+            output_names=["heatmap"],
+            dynamic_axes={"spatial_feat": {0: "batch", 2: "height", 3: "width"},
+                          "heatmap":      {0: "batch"}},
+            opset_version=17,
+            do_constant_folding=True,
+            dynamo=False,
+        )
+        print(f"  saved ({heatmap_onnx.stat().st_size / 1e6:.1f} MB)  ✓")
+    else:
+        print("\n[5/7] Skipping heatmap generator (no checkpoint found)")
+        print(f"  To generate: python generate_heatmap_data.py && python train_heatmap_model.py")
+
+    # ── 6. Label map + treatments ─────────────────────────────────────────────
+    print("\n[6/7] Generating label_map.json and treatments.json …")
+>>>>>>> q0q
     shutil.copy(label_map_path, OUT_DIR / "label_map.json")
     print("  label_map.json  ✓")
 
@@ -283,7 +327,11 @@ def main():
         json.dump(treatments, f, indent=2)
     print("  treatments.json ✓")
 
+<<<<<<< HEAD
     # ── Summary ───────────────────────────────────────────────────────────────
+=======
+    # ── 7. Summary ────────────────────────────────────────────────────────────
+>>>>>>> q0q
     print("\n✅  Export complete.  Output files:")
     total = 0
     for p in sorted(OUT_DIR.rglob("*")):
