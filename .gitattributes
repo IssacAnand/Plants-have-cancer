@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-*.onnx filter=lfs diff=lfs merge=lfs -text
-=======
 frontend/assets/models/text_encoder.onnx filter=lfs diff=lfs merge=lfs -text
 frontend/assets/models/image_backbone.onnx filter=lfs diff=lfs merge=lfs -text
 frontend/assets/models/mlp.onnx filter=lfs diff=lfs merge=lfs -text
->>>>>>> q0q
+*.onnx filter=lfs diff=lfs merge=lfs -text

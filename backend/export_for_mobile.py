@@ -47,7 +47,7 @@ DATA_DIR    = Path("./data")
 OUT_DIR     = Path("../assets/models")
 
 IMG_SIZE    = 320
-NUM_CLASSES = 89
+NUM_CLASSES = 59
 TEXT_MODEL  = CHECKPOINTS / "best_text_encoder.pt"   # HuggingFace directory
 
 
@@ -271,10 +271,6 @@ def main():
           f"[CLS]={vocab.get('[CLS]')}, [SEP]={vocab.get('[SEP]')}, "
           f"[UNK]={vocab.get('[UNK]')}")
 
-<<<<<<< HEAD
-    # ── 5. Label map + treatments ─────────────────────────────────────────────
-    print("\n[5/5] Generating label_map.json and treatments.json …")
-=======
     # ── 5. Heatmap generator CNN ─────────────────────────────────────────────
     heatmap_ckpt = CHECKPOINTS / "best_heatmap_generator.pt"
     if heatmap_ckpt.exists():
@@ -316,7 +312,6 @@ def main():
 
     # ── 6. Label map + treatments ─────────────────────────────────────────────
     print("\n[6/7] Generating label_map.json and treatments.json …")
->>>>>>> q0q
     shutil.copy(label_map_path, OUT_DIR / "label_map.json")
     print("  label_map.json  ✓")
 
@@ -327,11 +322,7 @@ def main():
         json.dump(treatments, f, indent=2)
     print("  treatments.json ✓")
 
-<<<<<<< HEAD
-    # ── Summary ───────────────────────────────────────────────────────────────
-=======
     # ── 7. Summary ────────────────────────────────────────────────────────────
->>>>>>> q0q
     print("\n✅  Export complete.  Output files:")
     total = 0
     for p in sorted(OUT_DIR.rglob("*")):

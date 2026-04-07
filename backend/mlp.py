@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
@@ -13,12 +16,13 @@ DEVICE      = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 EPOCHS      = 50
 LR          = 1e-3
 BATCH_SIZE  = 32
-NUM_CLASSES = 89
 DROPOUT     = 0.3
  
 IMAGE_EMB_PATH = "./checkpoints/image_embeddings.pt"
 TEXT_EMB_PATH  = "./checkpoints/text_embeddings.pt"
 MLP_SAVE       = "./checkpoints/best_multimodal_mlp.pt"
+LABEL_MAP_PATH = Path("./data/label_map.json")
+EXCLUDED_SUFFIX = "leaf"
 
 torch.cuda.manual_seed(42)
 torch.manual_seed(42)
@@ -34,8 +38,10 @@ class MultimodalMLP(nn.Module):
     """
  
     def __init__(self, image_dim=768, text_dim=768,
-                 num_classes=NUM_CLASSES, dropout=DROPOUT):
+                 num_classes=None, dropout=DROPOUT):
         super().__init__()
+        if num_classes is None:
+            raise ValueError("num_classes must be provided.")
  
         fused_dim = image_dim + text_dim  # 1536
  
@@ -60,7 +66,7 @@ class MultimodalMLP(nn.Module):
  
     def forward(self, image_emb, text_emb):
         fused = torch.cat([image_emb, text_emb], dim=1)  # (B, 1536)
-        return self.mlp(fused)                            # (B, 89)
+        return self.mlp(fused)
     
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -92,9 +98,47 @@ def load_embeddings():
             img_test_embeddings,  img_test_labels,
             txt_train_embeddings, txt_train_labels,
             txt_test_embeddings,  txt_test_labels)
+
+
+def load_filtered_label_info():
+    """Return the class IDs to keep after excluding labels that end with 'leaf'."""
+    with LABEL_MAP_PATH.open(encoding="utf-8") as f:
+        label_map = json.load(f)
+
+    ordered_labels = sorted(label_map.items(), key=lambda item: item[1])
+    excluded = [(name, idx) for name, idx in ordered_labels if name.endswith(EXCLUDED_SUFFIX)]
+    kept = [(name, idx) for name, idx in ordered_labels if not name.endswith(EXCLUDED_SUFFIX)]
+
+    if not kept:
+        raise ValueError(f"No classes remain after excluding labels ending with '{EXCLUDED_SUFFIX}'.")
+
+    old_to_new = {old_idx: new_idx for new_idx, (_, old_idx) in enumerate(kept)}
+
+    print(f"Excluding {len(excluded)} classes ending with '{EXCLUDED_SUFFIX}':")
+    print(", ".join(name for name, _ in excluded))
+    print(f"Keeping {len(kept)} classes for training/testing.")
+
+    return {
+        "excluded": excluded,
+        "kept": kept,
+        "old_to_new": old_to_new,
+        "num_classes": len(kept),
+    }
+
+
+def filter_and_remap_embeddings(embeddings, labels, old_to_new):
+    """Drop excluded labels and remap the remaining labels to 0..N-1."""
+    remap = torch.full((max(old_to_new) + 1,), -1, dtype=torch.long)
+    for old_idx, new_idx in old_to_new.items():
+        remap[old_idx] = new_idx
+
+    mapped_labels = remap[labels.long()]
+    keep_mask = mapped_labels >= 0
+
+    return embeddings[keep_mask], mapped_labels[keep_mask]
  
  
-def align_embeddings(img_emb, img_lbl, txt_emb, txt_lbl):
+def align_embeddings(img_emb, img_lbl, txt_emb, txt_lbl, num_classes):
     """
     Align image and text embeddings by class label.
     Keeps all image samples; samples text embeddings with replacement
@@ -102,13 +146,13 @@ def align_embeddings(img_emb, img_lbl, txt_emb, txt_lbl):
     """
     aligned_img, aligned_txt, aligned_lbl = [], [], []
  
-    for class_idx in range(NUM_CLASSES):
+    for class_idx in range(num_classes):
         img_mask  = (img_lbl == class_idx)
         txt_mask  = (txt_lbl == class_idx)
         img_class = img_emb[img_mask]
         txt_class = txt_emb[txt_mask]
  
-        if len(txt_class) == 0:
+        if len(img_class) == 0 or len(txt_class) == 0:
             continue
  
         n = len(img_class)
@@ -116,6 +160,9 @@ def align_embeddings(img_emb, img_lbl, txt_emb, txt_lbl):
         aligned_img.append(img_class)
         aligned_txt.append(txt_class[repeat_idx])
         aligned_lbl.append(torch.full((n,), class_idx, dtype=torch.long))
+
+    if not aligned_img:
+        raise ValueError("No aligned classes found after filtering/remapping embeddings.")
  
     return (torch.cat(aligned_img),
             torch.cat(aligned_txt),
@@ -240,18 +287,37 @@ def main():
  
     torch.manual_seed(42)
     torch.cuda.manual_seed(42)
+
+    label_info = load_filtered_label_info()
  
     # Data
     (img_train_emb, img_train_lbl,
      img_test_emb,  img_test_lbl,
      txt_train_emb, txt_train_lbl,
      txt_test_emb,  txt_test_lbl) = load_embeddings()
+
+    img_train_emb, img_train_lbl = filter_and_remap_embeddings(
+        img_train_emb, img_train_lbl, label_info["old_to_new"])
+    img_test_emb, img_test_lbl = filter_and_remap_embeddings(
+        img_test_emb, img_test_lbl, label_info["old_to_new"])
+    txt_train_emb, txt_train_lbl = filter_and_remap_embeddings(
+        txt_train_emb, txt_train_lbl, label_info["old_to_new"])
+    txt_test_emb, txt_test_lbl = filter_and_remap_embeddings(
+        txt_test_emb, txt_test_lbl, label_info["old_to_new"])
+
+    print("\nFiltered embeddings:")
+    print(f"Image train embeddings shape:  {img_train_emb.shape}")
+    print(f"Text  train embeddings shape:  {txt_train_emb.shape}")
+    print(f"Image test  embeddings shape:  {img_test_emb.shape}")
+    print(f"Text  test  embeddings shape:  {txt_test_emb.shape}")
+    print(f"Unique filtered image classes: {img_train_lbl.unique().shape[0]}")
+    print(f"Unique filtered text  classes: {txt_train_lbl.unique().shape[0]}")
  
     print("\nAligning embeddings...")
     train_img, train_txt, train_lbl = align_embeddings(
-        img_train_emb, img_train_lbl, txt_train_emb, txt_train_lbl)
+        img_train_emb, img_train_lbl, txt_train_emb, txt_train_lbl, label_info["num_classes"])
     test_img, test_txt, test_lbl = align_embeddings(
-        img_test_emb, img_test_lbl, txt_test_emb, txt_test_lbl)
+        img_test_emb, img_test_lbl, txt_test_emb, txt_test_lbl, label_info["num_classes"])
  
     print(f"Aligned train: img={train_img.shape}, txt={train_txt.shape}, lbl={train_lbl.shape}")
     print(f"Aligned test:  img={test_img.shape},  txt={test_txt.shape},  lbl={test_lbl.shape}")
@@ -261,7 +327,7 @@ def main():
         test_img,  test_txt,  test_lbl)
  
     # Model
-    model     = MultimodalMLP(num_classes=NUM_CLASSES).to(DEVICE)
+    model     = MultimodalMLP(num_classes=label_info["num_classes"]).to(DEVICE)
  
     # Train
     print(f"\nTraining for {EPOCHS} epochs on {DEVICE}...\n")
