@@ -229,8 +229,12 @@ export default function ResultsScreen() {
                 fontSize: 13,
                 color: "#374151",
                 lineHeight: 22,
+                color: "#374151",
+                lineHeight: 22,
               }}
             >
+              {analysisResult?.treatment
+                ?? "Treatment recommendations not available."}
               {analysisResult?.treatment
                 ?? "Treatment recommendations not available."}
             </Text>
