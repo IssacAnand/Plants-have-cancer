@@ -20,9 +20,18 @@ import {
 } from "@expo-google-fonts/poppins";
 
 import usePlantStore from "../store/usePlantStore";
+import labelMap from "../assets/models/label_map.json";
 
 const GREEN       = "#08AF4E";
 const TITLE_COLOR = "#561111";
+
+const PLANT_TYPES = [...new Set(
+  Object.keys(labelMap).map((k) => {
+    if (k.startsWith("bell pepper")) return "bell pepper";
+    if (k.startsWith("grapevine"))   return "grapevine";
+    return k.split(" ")[0];
+  })
+)].sort();
 
 export default function PreviewScreen() {
   const router = useRouter();
@@ -32,12 +41,34 @@ export default function PreviewScreen() {
   // Symptom text — will be passed to the model once integration is complete
   const [symptomText, setSymptomText] = useState("");
 
-  const capturedImageUri = usePlantStore((s) => s.capturedImageUri);
-  const setCapturedText  = usePlantStore((s) => s.setCapturedText);
-  const isModelLoaded    = usePlantStore((s) => s.isModelLoaded);
+  // Plant name predictive search
+  const [plantName, setPlantName]     = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+
+  const capturedImageUri     = usePlantStore((s) => s.capturedImageUri);
+  const setCapturedText      = usePlantStore((s) => s.setCapturedText);
+  const setCapturedPlantName = usePlantStore((s) => s.setCapturedPlantName);
+  const isModelLoaded        = usePlantStore((s) => s.isModelLoaded);
+
+  function handlePlantNameChange(text) {
+    setPlantName(text);
+    if (text.trim().length === 0) {
+      setSuggestions([]);
+    } else {
+      setSuggestions(
+        PLANT_TYPES.filter((p) => p.includes(text.toLowerCase().trim())).slice(0, 5)
+      );
+    }
+  }
+
+  function selectSuggestion(name) {
+    setPlantName(name);
+    setSuggestions([]);
+  }
 
   function handleGetDiagnosis() {
     if (!capturedImageUri || !isModelLoaded) return;
+    setCapturedPlantName(plantName);
     setCapturedText(symptomText);
     router.replace("/processing");
   }
@@ -101,6 +132,73 @@ export default function PreviewScreen() {
               >
                 No image captured
               </Text>
+            </View>
+          )}
+
+          {/* ── Plant name label ── */}
+          <Text
+            style={{
+              fontFamily: fontsLoaded ? "Poppins_600SemiBold" : undefined,
+              fontSize: 17,
+              color: TITLE_COLOR,
+              marginTop: 20,
+              marginBottom: 10,
+            }}
+          >
+            Plant Name
+          </Text>
+
+          {/* ── Plant name input + suggestions ── */}
+          <TextInput
+            style={{
+              backgroundColor: "#f3f4f6",
+              borderRadius: 12,
+              padding: 14,
+              fontSize: 14,
+              fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
+              color: "#374151",
+            }}
+            placeholder="Type your plant..."
+            placeholderTextColor="#9ca3af"
+            value={plantName}
+            onChangeText={handlePlantNameChange}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+
+          {suggestions.length > 0 && (
+            <View
+              style={{
+                backgroundColor: "#ffffff",
+                borderWidth: 1,
+                borderColor: "#e5e7eb",
+                borderRadius: 12,
+                marginTop: 4,
+                overflow: "hidden",
+              }}
+            >
+              {suggestions.map((item, index) => (
+                <TouchableOpacity
+                  key={item}
+                  onPress={() => selectSuggestion(item)}
+                  style={{
+                    paddingVertical: 10,
+                    paddingHorizontal: 14,
+                    borderBottomWidth: index < suggestions.length - 1 ? 1 : 0,
+                    borderBottomColor: "#f3f4f6",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
+                      fontSize: 14,
+                      color: "#374151",
+                    }}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           )}
 
