@@ -13,6 +13,7 @@ from torch.amp import GradScaler, autocast
 from torchvision import transforms
 from PIL import Image
 import timm
+import evaluate
 
 from dataset import PlantWildDataset
 
@@ -24,14 +25,18 @@ MODEL_NAME  = "mobilevitv2_150"
 IMAGES_DIR  = "./data/images/plantwild"
 IMG_SIZE    = 320      
 BATCH_SIZE  = 16        
-EPOCHS      = 100     
+EPOCHS      = 50     
 BACKBONE_LR = 1e-5      
 HEAD_LR     = 1e-3      
 SAVE_DIR    = f"./checkpoints"
 DEVICE      = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+EXCLUDED_SUFFIX = "leaf"
 
 torch.cuda.manual_seed(42)
 torch.manual_seed(42)
+
+metric_f1  = evaluate.load("f1")
+metric_acc = evaluate.load("accuracy")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -112,6 +117,22 @@ def get_transforms(img_size: int = IMG_SIZE, train: bool = True):
     ])
 
 
+def build_filtered_label_map(images_dir: str):
+    """Build a label map that excludes class folders ending with 'leaf'."""
+    class_dirs = sorted([d for d in Path(images_dir).iterdir() if d.is_dir()])
+    excluded = [d.name for d in class_dirs if d.name.endswith(EXCLUDED_SUFFIX)]
+    kept = [d.name for d in class_dirs if not d.name.endswith(EXCLUDED_SUFFIX)]
+
+    if not kept:
+        raise ValueError(f"No classes remain after excluding labels ending with '{EXCLUDED_SUFFIX}'.")
+
+    print(f"Excluding {len(excluded)} classes ending with '{EXCLUDED_SUFFIX}':")
+    print(", ".join(excluded))
+    print(f"Keeping {len(kept)} classes for MobileViT training/testing.")
+
+    return {class_name: idx for idx, class_name in enumerate(kept)}
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # TRAINING
 # ──────────────────────────────────────────────────────────────────────────────
@@ -136,6 +157,7 @@ def train(model, train_loader, test_loader, device, save_dir, class_weights=None
  
     scaler   = GradScaler("cuda")
     best_acc = 0.0
+    best_f1 = 0.0
 
     # Training loop ---------------------------------------------------------------------------
     for epoch in range(1, EPOCHS + 1):
@@ -161,30 +183,35 @@ def train(model, train_loader, test_loader, device, save_dir, class_weights=None
  
         # Test loop -------------------------------------------------------------------------------
         model.eval()
-        correct = total = 0
+        all_preds, all_labels = [], []
         with torch.no_grad():
             for images, labels in tqdm(test_loader, desc="Testing", leave=True):
                 images, labels = images.to(device), labels.to(device)
                 with autocast("cuda"):
                     preds = model(images).argmax(1)
-                correct += (preds == labels).sum().item()
-                total   += labels.size(0)
+                all_preds.extend(preds.cpu().tolist())
+                all_labels.extend(labels.cpu().tolist())
  
-        acc = 100 * correct / total
+        f1  = metric_f1.compute(predictions=all_preds, references=all_labels, average="macro")
+        acc = metric_acc.compute(predictions=all_preds, references=all_labels)
+        macro_f1 = f1["f1"] * 100
+        accuracy = acc["accuracy"] * 100
 
         print(f"Epoch {epoch:>3}/{EPOCHS}  "
               f"Loss: {train_loss / len(train_loader):.4f}  "
-              f"Test Acc: {acc:.2f}%")
+              f"Test Acc: {accuracy:.2f}%  "
+              f"Macro F1: {macro_f1:.2f}%")
  
-        if acc > best_acc:
-            best_acc = acc
+        if accuracy > best_acc:
+            best_acc = accuracy
+            best_f1 = macro_f1
             torch.save(
                 model.get_encoder().state_dict(),
                 os.path.join(save_dir, "best_image_encoder.pt")
             )
-            print(f"  ✓ Best encoder saved ({best_acc:.2f}%)")
+            print(f"  ✓ Best encoder saved (Acc: {best_acc:.2f}%  Macro F1: {best_f1:.2f}%)")
  
-    print(f"\nFinetuning complete — best Test Acc: {best_acc:.2f}%")
+    print(f"\nFinetuning complete — best Test Acc: {best_acc:.2f}%  Macro F1: {best_f1:.2f}%")
     return model
 
 
@@ -245,14 +272,17 @@ if __name__ == "__main__":
  
     torch.manual_seed(42)
     torch.cuda.manual_seed(42)
+
+    label_map = build_filtered_label_map(IMAGES_DIR)
  
     # Load datasets
     train_ds = PlantWildDataset(IMAGES_DIR,
                                 transform=get_transforms(IMG_SIZE, train=True),
-                                split="train")
+                                split="train",
+                                label_map=label_map)
     test_ds  = PlantWildDataset(IMAGES_DIR,
                                 transform=get_transforms(IMG_SIZE, train=False),
-                                split="test", label_map=train_ds.label_map)
+                                split="test", label_map=label_map)
  
     train_ds.save_label_map("./data/label_map.json")
  

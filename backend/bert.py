@@ -29,12 +29,12 @@ LABEL_MAP_PATH = "./data/label_map.json"
 SAVE_DIR       = "./checkpoints"
 DEVICE         = "cuda" if torch.cuda.is_available() else "cpu"
 
-NUM_LABELS     = 89
 MAX_LENGTH     = 128
 BATCH_SIZE     = 8
 NUM_EPOCHS     = 10
 LEARNING_RATE  = 2e-5
 WEIGHT_DECAY   = 0.01
+EXCLUDED_SUFFIX = "leaf"
  
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -73,6 +73,25 @@ def preprocess_text_data(path, label_map):
     df_long["label"] = df_long["label"].astype(int)
  
     return df_long
+
+
+def load_filtered_label_map():
+    """Load label_map.json and exclude labels ending with 'leaf'."""
+    with open(LABEL_MAP_PATH, "r", encoding="utf-8") as f:
+        raw_label_map = json.load(f)
+
+    ordered_labels = sorted(raw_label_map.items(), key=lambda item: item[1])
+    excluded = [name for name, _ in ordered_labels if name.endswith(EXCLUDED_SUFFIX)]
+    kept = [name for name, _ in ordered_labels if not name.endswith(EXCLUDED_SUFFIX)]
+
+    if not kept:
+        raise ValueError(f"No classes remain after excluding labels ending with '{EXCLUDED_SUFFIX}'.")
+
+    print(f"Excluding {len(excluded)} classes ending with '{EXCLUDED_SUFFIX}':")
+    print(", ".join(excluded))
+    print(f"Keeping {len(kept)} classes for BERT training/testing.")
+
+    return {name: idx for idx, name in enumerate(kept)}
  
  
 def build_datasets(tokenizer, label_map):
@@ -290,17 +309,17 @@ def main():
 
     torch.manual_seed(42)
     torch.cuda.manual_seed(42)
+
+    label_map = load_filtered_label_map()
  
     # Tokenizer and model
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model     = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME, num_labels=NUM_LABELS)
+    model     = AutoModelForSequenceClassification.from_pretrained(
+        MODEL_NAME, num_labels=len(label_map)
+    )
  
     print(f"Output labels:  {model.config.num_labels}")
     print(f"Hidden size:    {model.config.hidden_size}")
- 
-    # Data
-    with open(LABEL_MAP_PATH, "r") as f:
-        label_map = json.load(f)
  
     train_dataset, test_dataset, train_df, test_df = build_datasets(tokenizer, label_map)
  

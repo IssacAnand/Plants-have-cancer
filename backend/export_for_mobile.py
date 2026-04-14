@@ -47,7 +47,7 @@ DATA_DIR    = Path("./data")
 OUT_DIR     = Path("../assets/models")
 
 IMG_SIZE    = 320
-NUM_CLASSES = 89
+NUM_CLASSES = 59
 TEXT_MODEL  = CHECKPOINTS / "best_text_encoder.pt"   # HuggingFace directory
 
 
