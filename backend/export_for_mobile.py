@@ -44,7 +44,7 @@ from transformers import AutoModelForSequenceClassification
 
 CHECKPOINTS = Path("./checkpoints")
 DATA_DIR    = Path("./data")
-OUT_DIR     = Path("../assets/models")
+OUT_DIR     = Path("../frontend/assets/models")
 
 IMG_SIZE    = 320
 NUM_CLASSES = 59

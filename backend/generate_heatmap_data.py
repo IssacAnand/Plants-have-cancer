@@ -39,7 +39,7 @@ from bert import FeatureExtractorModel
 
 DEVICE          = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 IMG_SIZE        = 320
-NUM_CLASSES     = 89
+NUM_CLASSES     = 59
 
 IMAGES_DIR      = "./data/images/plantwild"
 TEXT_DATA_DIR   = "./data/text"
