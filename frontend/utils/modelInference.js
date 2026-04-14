@@ -26,18 +26,7 @@
 //   Run with:  npx expo run:ios  OR  npx expo run:android
 //   (Expo Go does NOT support native modules)
 
-// onnxruntime-react-native is a JSI native module — unavailable in Expo Go.
-// Guard the import so the app loads (UI-only mode) without crashing.
-let InferenceSession = null;
-let Tensor = null;
-try {
-  const ort = require("onnxruntime-react-native");
-  InferenceSession = ort.InferenceSession;
-  Tensor = ort.Tensor;
-} catch {
-  // Running in Expo Go — native module not available; ML inference disabled.
-}
-
+import { InferenceSession, Tensor } from "onnxruntime-react-native";
 import { Asset } from "expo-asset";
 import * as ImageManipulator from "expo-image-manipulator";
 import jpeg from "jpeg-js";
