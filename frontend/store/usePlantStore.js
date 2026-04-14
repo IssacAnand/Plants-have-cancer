@@ -58,6 +58,9 @@ const usePlantStore = create((set, get) => ({
   /** URI (file path) of the photo the user just took with the camera */
   capturedImageUri: null,
 
+  /** Plant name selected by the user on the preview screen */
+  capturedPlantName: null,
+
   /** Symptom description typed by the user on the preview screen */
   capturedText: null,
 
@@ -84,6 +87,12 @@ const usePlantStore = create((set, get) => ({
    * @param {string} uri  e.g. "file:///path/to/image.jpg"
    */
   setCapturedImage: (uri) => set({ capturedImageUri: uri }),
+
+  /**
+   * Called by the preview screen when the user selects a plant name.
+   * @param {string} name  Plant name selected from the predictive list
+   */
+  setCapturedPlantName: (name) => set({ capturedPlantName: name }),
 
   /**
    * Called by the preview screen when the user taps "Get Diagnosis".
@@ -130,7 +139,7 @@ const usePlantStore = create((set, get) => ({
    * Resets photo + result so the next scan starts clean.
    * Call this when the user taps "New Scan" on the results screen.
    */
-  resetSession: () => set({ capturedImageUri: null, capturedText: null, analysisResult: null }),
+  resetSession: () => set({ capturedImageUri: null, capturedPlantName: null, capturedText: null, analysisResult: null }),
 }));
 
 export default usePlantStore;
