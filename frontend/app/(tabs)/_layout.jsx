@@ -45,12 +45,14 @@ export default function TabsLayout() {
                 width: 52,
                 height: 52,
                 borderRadius: 26,
-                backgroundColor: "#E8E8E8",
+                backgroundColor: focused ? ACTIVE : "#E8E8E8",
+                borderWidth: focused ? 2 : 0,
+                borderColor: focused ? "#ffffff" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <ScanLine size={34} color={focused ? ACTIVE : INACTIVE} />
+              <ScanLine size={34} color={focused ? "#ffffff" : INACTIVE} />
             </View>
           ),
         }}

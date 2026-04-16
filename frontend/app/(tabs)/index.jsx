@@ -15,6 +15,7 @@ import {
   Poppins_600SemiBold,
   Poppins_400Regular,
 } from "@expo-google-fonts/poppins";
+import { useRouter } from "expo-router";
 import { Search } from "lucide-react-native";
 
 import usePlantStore from "../../store/usePlantStore";
@@ -26,18 +27,19 @@ const TITLE_COLOR  = "#561111";
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const [search, setSearch]               = useState("");
+  const router = useRouter();
+
+  const [search, setSearch]                 = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
 
   const [fontsLoaded] = useFonts({ Poppins_600SemiBold, Poppins_400Regular });
 
-  const plants = usePlantStore((s) => s.plants);
+  const plants          = usePlantStore((s) => s.plants);
+  const setSelectedScan = usePlantStore((s) => s.setSelectedScan);
 
   // Filter by search text and active category tab
   const filtered = plants.filter((p) => {
-    const matchesSearch = p.name
-      .toLowerCase()
-      .includes(search.toLowerCase());
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
 
     const matchesCategory =
       activeCategory === "All" ||
@@ -149,9 +151,7 @@ export default function HomeScreen() {
         columnWrapperStyle={{ justifyContent: "space-between" }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View
-            style={{ flex: 1, alignItems: "center", marginTop: 60 }}
-          >
+          <View style={{ flex: 1, alignItems: "center", marginTop: 60 }}>
             <Text
               style={{
                 fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
@@ -164,7 +164,21 @@ export default function HomeScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <PlantCard plant={item} fontsLoaded={fontsLoaded} />
+          <PlantCard
+            plant={item}
+            fontsLoaded={fontsLoaded}
+            onPress={() => {
+              setSelectedScan({
+                plantName:   item.name,
+                imageSource: item.image,
+                imageUri:    null,
+                disease:     item.disease ?? (item.status === "healthy" ? "Healthy Plant" : "Disease Detected"),
+                confidence:  item.confidence ?? null,
+                treatment:   item.treatment ?? null,
+              });
+              router.push("/results");
+            }}
+          />
         )}
       />
     </SafeAreaView>
@@ -172,12 +186,16 @@ export default function HomeScreen() {
 }
 
 // ─── Plant card ───────────────────────────────────────────────────────────────
-function PlantCard({ plant, fontsLoaded }) {
-  const isHealthy = plant.status === "healthy";
+function PlantCard({ plant, fontsLoaded, onPress }) {
+  const isHealthy  = plant.status === "healthy";
   const badgeColor = isHealthy ? ACTIVE_GREEN : "#ef4444";
 
   return (
-    <View style={{ width: "48%", marginBottom: 18 }}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={{ width: "48%", marginBottom: 18 }}
+    >
       {/* Plant image */}
       <View
         style={{
@@ -237,6 +255,6 @@ function PlantCard({ plant, fontsLoaded }) {
           </Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }

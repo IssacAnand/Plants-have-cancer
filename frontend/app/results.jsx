@@ -15,7 +15,7 @@ import {
   Poppins_600SemiBold,
   Poppins_400Regular,
 } from "@expo-google-fonts/poppins";
-import { Plus } from "lucide-react-native";
+import { Plus, ChevronLeft } from "lucide-react-native";
 
 import usePlantStore from "../store/usePlantStore";
 
@@ -32,29 +32,43 @@ export default function ResultsScreen() {
   const [activeTab,  setActiveTab]  = useState("Diagnosis");
   const [fontsLoaded] = useFonts({ Poppins_600SemiBold, Poppins_400Regular });
 
-  const capturedImageUri = usePlantStore((s) => s.capturedImageUri);
-  const analysisResult   = usePlantStore((s) => s.analysisResult);
-  const addPlant         = usePlantStore((s) => s.addPlant);
-  const resetSession     = usePlantStore((s) => s.resetSession);
+  const capturedImageUri  = usePlantStore((s) => s.capturedImageUri);
+  const capturedPlantName = usePlantStore((s) => s.capturedPlantName);
+  const analysisResult    = usePlantStore((s) => s.analysisResult);
+  const selectedScan      = usePlantStore((s) => s.selectedScan);
+  const addPlant          = usePlantStore((s) => s.addPlant);
+  const resetSession      = usePlantStore((s) => s.resetSession);
 
-  // Use real result when available, placeholder otherwise
-  const result = analysisResult ?? {
-    plantName:  "Monsterra",
-    disease:    "Light Blight with Sun Spots",
-    confidence: 97,
+  // True when the user arrived here from History / My Farm
+  const isFromHistory = !!selectedScan;
+
+  // Unified result — history scan takes precedence over live result
+  const result = selectedScan ?? analysisResult ?? {
+    plantName:  "Unknown Plant",
+    disease:    "Unknown",
+    confidence: 0,
   };
 
   function handleAddToFarm() {
+    const isHealthy = result.disease?.toLowerCase().includes("healthy");
     addPlant({
       id:          Date.now().toString(),
-      name:        result.plantName ?? "Unknown Plant",
-      status:      "diseased",
+      name:        (capturedPlantName?.trim() || result.plantName) ?? "Unknown Plant",
+      status:      isHealthy ? "healthy" : "diseased",
       isFavourite: false,
-      image:       capturedImageUri ? { uri: capturedImageUri } : null,
-      bgColor:     "#fde68a",
+      image:       selectedScan?.imageSource ?? (capturedImageUri ? { uri: capturedImageUri } : null),
+      bgColor:     isHealthy ? "#c8f0d6" : "#fde68a",
+      disease:     result.disease,
+      confidence:  result.confidence,
+      treatment:   result.treatment,
     });
     resetSession();
     router.replace("/(tabs)/index");
+  }
+
+  function handleBack() {
+    resetSession();
+    router.back();
   }
 
   return (
@@ -65,22 +79,47 @@ export default function ResultsScreen() {
         bounces={false}
       >
         {/* ── Full-width photo, edge to edge ── */}
-        {capturedImageUri ? (
-          <Image
-            source={{ uri: capturedImageUri }}
-            style={{ width: "100%", aspectRatio: 9 / 10 }}
-            resizeMode="cover"
-          />
-        ) : (
-          <View
+        {(() => {
+          const src =
+            selectedScan?.imageSource ??
+            (selectedScan?.imageUri   ? { uri: selectedScan.imageUri } :
+             capturedImageUri         ? { uri: capturedImageUri }      : null);
+          return src ? (
+            <Image
+              source={src}
+              style={{ width: "100%", aspectRatio: 9 / 10 }}
+              resizeMode="cover"
+            />
+          ) : (
+            <View
+              style={{
+                width: "100%", aspectRatio: 9 / 10,
+                backgroundColor: "#d1fae5",
+                alignItems: "center", justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontSize: 64 }}>🌿</Text>
+            </View>
+          );
+        })()}
+
+        {/* ── Back button overlay (history path only) ── */}
+        {isFromHistory && (
+          <TouchableOpacity
+            onPress={handleBack}
+            activeOpacity={0.8}
             style={{
-              width: "100%", aspectRatio: 9 / 10,
-              backgroundColor: "#d1fae5",
-              alignItems: "center", justifyContent: "center",
+              position: "absolute",
+              top: 48, left: 16,
+              width: 36, height: 36,
+              borderRadius: 18,
+              backgroundColor: "rgba(0,0,0,0.35)",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Text style={{ fontSize: 64 }}>🌿</Text>
-          </View>
+            <ChevronLeft size={20} color="#ffffff" />
+          </TouchableOpacity>
         )}
 
         {/* ── Tabs — mirrors the category strip in index.jsx ── */}
@@ -229,21 +268,16 @@ export default function ResultsScreen() {
                 fontSize: 13,
                 color: "#374151",
                 lineHeight: 22,
-                color: "#374151",
-                lineHeight: 22,
               }}
             >
-              {analysisResult?.treatment
-                ?? "Treatment recommendations not available."}
-              {analysisResult?.treatment
-                ?? "Treatment recommendations not available."}
+              {result.treatment ?? "Treatment recommendations not available."}
             </Text>
           )}
 
         </View>
       </ScrollView>
 
-      {/* ── Add to My Farm — fixed at bottom ── */}
+      {/* ── Bottom action — fixed ── */}
       <SafeAreaView
         style={{
           position: "absolute", bottom: 0, left: 0, right: 0,
@@ -253,38 +287,65 @@ export default function ResultsScreen() {
           paddingBottom: 10,
         }}
       >
-        <TouchableOpacity
-          onPress={handleAddToFarm}
-          activeOpacity={0.85}
-          style={{
-            backgroundColor: GREEN,
-            borderRadius: 10,
-            paddingVertical: 16,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 10,
-          }}
-        >
-          <Text
+        {isFromHistory ? (
+          <TouchableOpacity
+            onPress={handleBack}
+            activeOpacity={0.85}
             style={{
-              fontFamily: fontsLoaded ? "Poppins_600SemiBold" : undefined,
-              color: "#ffffff",
-              fontSize: 17,
+              backgroundColor: "#6b7280",
+              borderRadius: 10,
+              paddingVertical: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
             }}
           >
-            Add to My Farm
-          </Text>
-          <View
+            <ChevronLeft size={18} color="#ffffff" />
+            <Text
+              style={{
+                fontFamily: fontsLoaded ? "Poppins_600SemiBold" : undefined,
+                color: "#ffffff",
+                fontSize: 17,
+              }}
+            >
+              Back
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={handleAddToFarm}
+            activeOpacity={0.85}
             style={{
-              width: 26, height: 26, borderRadius: 13,
-              borderWidth: 2, borderColor: "#ffffff",
-              alignItems: "center", justifyContent: "center",
+              backgroundColor: GREEN,
+              borderRadius: 10,
+              paddingVertical: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
             }}
           >
-            <Plus size={14} color="#ffffff" />
-          </View>
-        </TouchableOpacity>
+            <Text
+              style={{
+                fontFamily: fontsLoaded ? "Poppins_600SemiBold" : undefined,
+                color: "#ffffff",
+                fontSize: 17,
+              }}
+            >
+              Add to My Farm
+            </Text>
+            <View
+              style={{
+                width: 26, height: 26, borderRadius: 13,
+                borderWidth: 2, borderColor: "#ffffff",
+                alignItems: "center", justifyContent: "center",
+              }}
+            >
+              <Plus size={14} color="#ffffff" />
+            </View>
+          </TouchableOpacity>
+        )}
       </SafeAreaView>
     </View>
   );
