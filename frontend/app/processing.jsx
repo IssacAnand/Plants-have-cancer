@@ -23,7 +23,6 @@ import { useEffect, useRef } from "react";
 import { View, Text, ActivityIndicator, SafeAreaView, Animated } from "react-native";
 import { useRouter } from "expo-router";
 
-import { analyzeLeaf } from "../utils/modelInference";
 import usePlantStore from "../store/usePlantStore";
 
 export default function ProcessingScreen() {
@@ -76,6 +75,8 @@ export default function ProcessingScreen() {
 
     async function runInference() {
       try {
+        const { analyzeLeaf } = await import("../utils/modelInference");
+
         // analyzeLeaf() runs three ONNX sessions (image + text + MLP)
         const result = await analyzeLeaf(capturedImageUri, combinedText, plantText ?? "");
 

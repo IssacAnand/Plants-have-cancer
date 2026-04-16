@@ -540,9 +540,6 @@ export async function analyzeLeaf(imageUri, symptomText = "", plantHint = "") {
   
   const probs = softmax(logits);
 
-  // Plant-hint masking disabled for raw prediction testing.
-  // Uncomment this block to restore family-constrained output.
-  /*
   const normalizedPlantHint = normalizePlantHint(plantHint);
   const maskedLogits = logits.map((logit, index) => {
     if (!normalizedPlantHint) {
@@ -554,20 +551,18 @@ export async function analyzeLeaf(imageUri, symptomText = "", plantHint = "") {
   });
 
   const hasPlantMask = Boolean(normalizedPlantHint) && maskedLogits.some((logit) => logit !== Number.NEGATIVE_INFINITY);
-  const scoreSource = hasPlantMask ? softmax(maskedLogits) : probs;
 
   if (normalizedPlantHint) {
     console.log(`[model] Plant hint: ${normalizedPlantHint}${hasPlantMask ? " (mask applied)" : " (no matching classes, using full distribution)"}`);
   }
-  */
 
-  const scoreSource = probs;
+  const scoreSource = hasPlantMask ? softmax(maskedLogits) : probs;
 
   const topIndices = Array.from(scoreSource)
     .map((v, i) => ({ i, v }))
     .sort((a, b) => b.v - a.v)
     .slice(0, 10);
-  console.log("[model] Top-10 predictions (RAW, mask disabled):");
+  console.log(`[model] Top-10 predictions (${hasPlantMask ? "plant mask enabled" : "no plant mask"}):`);
   topIndices.forEach(({ i, v }) => {
     const cls = INDEX_TO_CLASS[i];
     console.log(`  [${i}] ${cls}: ${v.toFixed(4)}`);

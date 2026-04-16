@@ -56,7 +56,6 @@ export default function DiagnosisScreen() {
 
   const recentScans      = usePlantStore((s) => s.recentScans);
   const loadRecentScans  = usePlantStore((s) => s.loadRecentScans);
-  const isModelLoaded    = usePlantStore((s) => s.isModelLoaded);
   const setSelectedScan  = usePlantStore((s) => s.setSelectedScan);
   const setCapturedImage = usePlantStore((s) => s.setCapturedImage);
 
@@ -167,12 +166,11 @@ export default function DiagnosisScreen() {
 
           {/* Scan button */}
           <TouchableOpacity
-            onPress={() => isModelLoaded && router.push("/camera")}
-            activeOpacity={isModelLoaded ? 0.85 : 1}
-            disabled={!isModelLoaded}
+            onPress={() => router.push("/camera")}
+            activeOpacity={0.85}
             style={{
               flex: 1,
-              backgroundColor: isModelLoaded ? GREEN : "#9ca3af",
+              backgroundColor: GREEN,
               borderRadius: 10,
               paddingVertical: 16,
               flexDirection: "row",
@@ -188,7 +186,7 @@ export default function DiagnosisScreen() {
                 fontSize: 20,
               }}
             >
-              {isModelLoaded ? "Scan" : "Loading..."}
+              Scan
             </Text>
             <Camera size={24} color="#ffffff" />
           </TouchableOpacity>

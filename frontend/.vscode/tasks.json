@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "start-expo-dev-client",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"expo",
+				"start",
+				"--dev-client",
+				"--host",
+				"lan"
+			],
+			"isBackground": true,
+			"group": "build"
+		}
+	]
+}

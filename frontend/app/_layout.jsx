@@ -18,19 +18,16 @@
 // This ROOT layout does three things:
 //   1. Sets up a Stack navigator (the base navigation container)
 //   2. Hides the default header on all screens
-//   3. Loads the PyTorch model as soon as the app starts
+//   3. Loads scan history on app start
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
-import { loadModel } from "../utils/modelInference";
 import usePlantStore from "../store/usePlantStore";
 
 export default function RootLayout() {
-  // Pull the setter from our Zustand store
-  const setModelLoaded = usePlantStore((state) => state.setModelLoaded);
   const loadRecentScans = usePlantStore((state) => state.loadRecentScans);
 
   useEffect(() => {
@@ -38,21 +35,14 @@ export default function RootLayout() {
     async function bootstrap() {
       const appStartTime = Date.now();
       console.log("[bootstrap] useEffect hook fired, calling bootstrap");
-      console.log("[bootstrap] Starting model and history load...");
-      
-      // Kick off the model load in the background
-      console.log("[bootstrap] Calling loadModel()");
-      const loadStart = Date.now();
-      const success = await loadModel();
-      const loadElapsed = Date.now() - loadStart;
-      console.log("[bootstrap] loadModel() returned:", success, `(${loadElapsed}ms)`);
-      setModelLoaded(success);
+
+      console.log("[bootstrap] Loading scan history...");
 
       // Pre-load scan history so the History tab is ready
       console.log("[bootstrap] Calling loadRecentScans()");
       await loadRecentScans();
       console.log("[bootstrap] loadRecentScans() completed");
-      
+
       const totalElapsed = Date.now() - appStartTime;
       console.log(`[bootstrap] ✅ Bootstrap complete in ${totalElapsed}ms`);
     }

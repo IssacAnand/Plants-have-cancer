@@ -11,6 +11,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -37,6 +38,7 @@ export default function PreviewScreen() {
   const router = useRouter();
 
   const [fontsLoaded] = useFonts({ Poppins_600SemiBold, Poppins_400Regular });
+  const [isLoadingModel, setIsLoadingModel] = useState(false);
 
   // Symptom text — will be passed to the model once integration is complete
   const [symptomText, setSymptomText] = useState("");
@@ -48,6 +50,7 @@ export default function PreviewScreen() {
   const capturedImageUri     = usePlantStore((s) => s.capturedImageUri);
   const setCapturedText      = usePlantStore((s) => s.setCapturedText);
   const setCapturedPlantName = usePlantStore((s) => s.setCapturedPlantName);
+  const setModelLoaded       = usePlantStore((s) => s.setModelLoaded);
   const isModelLoaded        = usePlantStore((s) => s.isModelLoaded);
 
   function handlePlantNameChange(text) {
@@ -66,14 +69,36 @@ export default function PreviewScreen() {
     setSuggestions([]);
   }
 
-  function handleGetDiagnosis() {
-    if (!capturedImageUri || !isModelLoaded) return;
+  async function handleGetDiagnosis() {
+    if (!capturedImageUri || isLoadingModel) return;
+
+    if (!isModelLoaded) {
+      try {
+        setIsLoadingModel(true);
+        const { loadModel } = await import("../utils/modelInference");
+        const loaded = await loadModel();
+        setModelLoaded(loaded);
+
+        if (!loaded) {
+          Alert.alert("Model unavailable", "The AI model could not be loaded on this device.");
+          return;
+        }
+      } catch (error) {
+        console.error("[preview] Failed to load model:", error);
+        setModelLoaded(false);
+        Alert.alert("Model load failed", "Unable to start the AI model. Please try again.");
+        return;
+      } finally {
+        setIsLoadingModel(false);
+      }
+    }
+
     setCapturedPlantName(plantName);
     setCapturedText(symptomText);
     router.replace("/processing");
   }
 
-  const canSubmit = Boolean(capturedImageUri) && isModelLoaded;
+  const canSubmit = Boolean(capturedImageUri) && !isLoadingModel;
 
   return (
     <KeyboardAvoidingView
@@ -258,9 +283,11 @@ export default function PreviewScreen() {
             >
               {!capturedImageUri
                 ? "Capture Image First"
-                : isModelLoaded
+                : isLoadingModel
+                  ? "Loading Model..."
+                  : isModelLoaded
                   ? "Get Diagnosis"
-                  : "Loading Model..."}
+                  : "Get Diagnosis"}
             </Text>
           </TouchableOpacity>
         </View>

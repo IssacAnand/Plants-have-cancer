@@ -3,6 +3,7 @@
 // Splash screen — first thing the user sees on launch.
 // Layout: Stack composition — upper content block + bottom-anchored oversized mascot.
 
+import { useEffect } from "react";
 import {
   View,
   Text,
@@ -34,12 +35,17 @@ const MASCOT_CLIP = MASCOT_SIZE * 0.30;
  * @param {function} props.onPress  - Called when the user taps "Let's Go!"
  */
 export default function SplashScreen({ onPress }) {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontsError] = useFonts({
     MontserratAlternates_800ExtraBold,
     Poppins_400Regular,
     Poppins_600SemiBold,
   });
-  if (!fontsLoaded) return null;
+
+  useEffect(() => {
+    if (fontsError) {
+      console.warn("[splash] Font loading failed; using fallback system fonts.", fontsError);
+    }
+  }, [fontsError]);
 
   return (
     <View style={styles.root}>
