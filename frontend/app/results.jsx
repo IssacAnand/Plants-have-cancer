@@ -18,13 +18,18 @@ import {
 import { Plus } from "lucide-react-native";
 
 import usePlantStore from "../store/usePlantStore";
+import DISEASE_ANALYSIS from "../assets/models/disease_analysis.json";
 
 const GREEN       = "#08AF4E";
 const TITLE_COLOR = "#561111";
-const TABS        = ["Diagnosis", "Explainability View", "Treatment"];
+const TABS        = ["Diagnosis", "Explainability View"];
 
-const LOREM =
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+function normalizeKey(text) {
+  return String(text ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
 
 export default function ResultsScreen() {
   const router = useRouter();
@@ -43,6 +48,16 @@ export default function ResultsScreen() {
     disease:    "Light Blight with Sun Spots",
     confidence: 97,
   };
+
+  const classKey = normalizeKey(
+    `${result.plantName ?? ""} ${result.disease ?? ""}`
+  );
+
+  const diagnosisAnalysis =
+    DISEASE_ANALYSIS?.[classKey]?.analysis
+    ?? "Detailed analysis is not available for this diagnosis yet.";
+
+  const confidenceColor = (Number(result.confidence) < 50) ? "#DC2626" : GREEN;
 
   function handleAddToFarm() {
     addPlant({
@@ -151,14 +166,14 @@ export default function ResultsScreen() {
                   marginBottom: 4,
                 }}
               >
-                Predicted Disease: {result.disease}
+                Diagnosed Disease: {result.disease}
               </Text>
 
               <Text
                 style={{
                   fontFamily: fontsLoaded ? "Poppins_600SemiBold" : undefined,
                   fontSize: 15,
-                  color: GREEN,
+                  color: confidenceColor,
                   marginBottom: 16,
                 }}
               >
@@ -173,7 +188,7 @@ export default function ResultsScreen() {
                   lineHeight: 22,
                 }}
               >
-                {LOREM}
+                {diagnosisAnalysis}
               </Text>
             </>
           )}
@@ -220,24 +235,6 @@ export default function ResultsScreen() {
                 Heatmap not available for this scan.
               </Text>
             )
-          )}
-
-          {activeTab === "Treatment" && (
-            <Text
-              style={{
-                fontFamily: fontsLoaded ? "Poppins_400Regular" : undefined,
-                fontSize: 13,
-                color: "#374151",
-                lineHeight: 22,
-                color: "#374151",
-                lineHeight: 22,
-              }}
-            >
-              {analysisResult?.treatment
-                ?? "Treatment recommendations not available."}
-              {analysisResult?.treatment
-                ?? "Treatment recommendations not available."}
-            </Text>
           )}
 
         </View>

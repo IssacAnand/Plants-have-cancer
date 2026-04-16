@@ -25,7 +25,6 @@
 //   npm install onnxruntime-react-native expo-image-manipulator jpeg-js expo-asset
 //   Run with:  npx expo run:ios  OR  npx expo run:android
 //   (Expo Go does NOT support native modules)
-
 import { InferenceSession, Tensor } from "onnxruntime-react-native";
 import { Asset } from "expo-asset";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -66,31 +65,41 @@ const BASE64_LOOKUP = Object.fromEntries(
 // ── loadModel ─────────────────────────────────────────────────────────────────
 
 /**
- * Loads all three ONNX models from the app bundle into memory.
+ * Loads all four ONNX models from the app bundle into memory.
  * Call once from app/_layout.jsx on startup.
  *
  * @returns {Promise<boolean>}  true on success, false on any failure
  */
 export async function loadModel() {
   try {
+    console.log("[model] Starting model loading...");
     // Helper: resolve an asset and create an InferenceSession from its local URI
-    async function loadSession(requireId) {
+    async function loadSession(requireId, modelName) {
+      console.log(`[model] Loading ${modelName}...`);
       const asset = Asset.fromModule(requireId);
+      console.log(`[model] ${modelName} asset created, downloading...`);
       await asset.downloadAsync();
-      return InferenceSession.create(asset.localUri ?? asset.uri);
+      console.log(`[model] ${modelName} downloaded, local URI: ${asset.localUri ?? asset.uri}`);
+      const session = await InferenceSession.create(asset.localUri ?? asset.uri);
+      console.log(`[model] ${modelName} session created successfully`);
+      return session;
     }
 
+    const startTime = Date.now();
     [imageSession, textSession, mlpSession, heatmapSession] = await Promise.all([
-      loadSession(require("../assets/models/image_backbone.onnx")),
-      loadSession(require("../assets/models/text_encoder.onnx")),
-      loadSession(require("../assets/models/mlp.onnx")),
-      loadSession(require("../assets/models/heatmap_generator.onnx")),
+      loadSession(require("../assets/models/image_backbone.onnx"), "image_backbone"),
+      loadSession(require("../assets/models/text_encoder.onnx"), "text_encoder"),
+      loadSession(require("../assets/models/mlp.onnx"), "mlp"),
+      loadSession(require("../assets/models/heatmap_generator.onnx"), "heatmap_generator"),
     ]);
+    const elapsed = Date.now() - startTime;
 
-    console.log("[model] All four ONNX sessions loaded");
+    console.log(`[model] ✅ All four ONNX sessions loaded in ${elapsed}ms`);
     return true;
   } catch (err) {
-    console.error("[model] Failed to load:", err);
+    console.error("[model] Failed to load sessions:", err?.message ?? err);
+    console.error("[model] Stack trace:", err?.stack ?? "no stack");
+    if (err?.context) console.error("[model] ONNX context:", err.context);
     return false;
   }
 }
@@ -183,12 +192,13 @@ function decodeJpegBase64(base64) {
 async function preprocessImage(imageUri) {
   const RESIZE_SIZE = Math.round(IMG_SIZE * 1.15); // 368
 
-  // Probe original dimensions so we can resize the *shorter* side to RESIZE_SIZE
-  // while preserving aspect ratio — exactly what torchvision.Resize(int) does.
+  // Probe original dimensions
   const { width: origW, height: origH } = await ImageManipulator.manipulateAsync(
     imageUri, [], {}
   );
+  console.log(`[model] Image dimensions: ${origW} x ${origH}`);
 
+  const aspectRatio = origW / origH;
   const resizeW = origW <= origH
     ? RESIZE_SIZE
     : Math.round(origW * (RESIZE_SIZE / origH));
@@ -196,7 +206,13 @@ async function preprocessImage(imageUri) {
     ? RESIZE_SIZE
     : Math.round(origH * (RESIZE_SIZE / origW));
 
-  // Centre-crop to IMG_SIZE × IMG_SIZE
+  console.log(`[model] Aspect ratio: ${aspectRatio.toFixed(2)}`);
+
+  if (aspectRatio < 0.6 || aspectRatio > 1.67) {
+    console.warn(`[model] ⚠️ EXTREME ASPECT RATIO: ${aspectRatio.toFixed(2)}. Center-crop may miss the plant, but this keeps preprocessing aligned with training.`);
+  }
+
+  console.log(`[model] Resizing to: ${resizeW} x ${resizeH}, center-crop to ${IMG_SIZE} x ${IMG_SIZE}`);
   const cropX = Math.floor((resizeW - IMG_SIZE) / 2);
   const cropY = Math.floor((resizeH - IMG_SIZE) / 2);
 
@@ -210,6 +226,21 @@ async function preprocessImage(imageUri) {
   );
 
   const rgbaData = decodeJpegBase64(resized.base64);
+  console.log(`[model] RGBA data decoded: ${rgbaData.length} bytes`);
+
+  // Sample a few pixels to verify
+  const samplePixels = [];
+  for (let i = 0; i < 5; i++) {
+    const idx = i * 4;
+    samplePixels.push({
+      idx: i,
+      r: rgbaData[idx],
+      g: rgbaData[idx + 1],
+      b: rgbaData[idx + 2],
+      a: rgbaData[idx + 3],
+    });
+  }
+  console.log("[model] Sample RGBA pixels:", samplePixels);
 
   // RGBA HWC → float32 NCHW with ImageNet normalisation
   const float32 = new Float32Array(3 * IMG_SIZE * IMG_SIZE);
@@ -222,6 +253,24 @@ async function preprocessImage(imageUri) {
       }
     }
   }
+
+  // Log sample normalized values (avoid spreading large array)
+  const sampleNormalized = {};
+  for (let c = 0; c < 3; c++) {
+    sampleNormalized[`channel_${c}_sample_5x5`] = Array.from(
+      float32.slice(c * IMG_SIZE * IMG_SIZE, c * IMG_SIZE * IMG_SIZE + 25)
+    ).map(v => v.toFixed(3));
+  }
+  console.log("[model] Sample normalized tensor values:", sampleNormalized);
+  
+  // Calculate min/max without spreading
+  let minVal = float32[0];
+  let maxVal = float32[0];
+  for (let i = 1; i < float32.length; i++) {
+    if (float32[i] < minVal) minVal = float32[i];
+    if (float32[i] > maxVal) maxVal = float32[i];
+  }
+  console.log(`[model] Tensor min: ${minVal.toFixed(4)}, max: ${maxVal.toFixed(4)}`);
 
   return new Tensor("float32", float32, [1, 3, IMG_SIZE, IMG_SIZE]);
 }
@@ -423,6 +472,15 @@ function parseClassName(className) {
   return { plantName, disease };
 }
 
+function normalizePlantHint(plantHint) {
+  return String(plantHint ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\b(plant|leaf|leaves|tree|trees|crop|crops)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // ── analyzeLeaf ───────────────────────────────────────────────────────────────
 
 /**
@@ -438,7 +496,7 @@ function parseClassName(className) {
  *   heatmapUri:  string,   // data:image/jpeg;base64,… for <Image source={{uri:…}} />
  * }>}
  */
-export async function analyzeLeaf(imageUri, symptomText = "") {
+export async function analyzeLeaf(imageUri, symptomText = "", plantHint = "") {
   if (!imageSession || !textSession || !mlpSession || !heatmapSession) {
     throw new Error("Model not loaded — call loadModel() first");
   }
@@ -468,9 +526,56 @@ export async function analyzeLeaf(imageUri, symptomText = "") {
 
   // ── 3. Classification ───────────────────────────────────────────────────────
   const logits       = mlpOutputs["logits"].data; // Float32Array (89,)
-  const probs        = softmax(logits);
-  const predictedIdx = probs.indexOf(Math.max(...probs));
-  const confidence   = Math.round(probs[predictedIdx] * 100);
+  
+  // Log top-10 WITHOUT any filtering — diagnose what the model is actually predicting
+  const allIndices = Array.from(logits)
+    .map((v, i) => ({ i, v }))
+    .sort((a, b) => b.v - a.v)
+    .slice(0, 10);
+  console.log("[model] Top-10 predictions (NO FILTERING):");
+  allIndices.forEach(({ i, v }) => {
+    const cls = INDEX_TO_CLASS[i];
+    console.log(`  [${i}] ${cls}: ${v.toFixed(4)}`);
+  });
+  
+  const probs = softmax(logits);
+
+  // Plant-hint masking disabled for raw prediction testing.
+  // Uncomment this block to restore family-constrained output.
+  /*
+  const normalizedPlantHint = normalizePlantHint(plantHint);
+  const maskedLogits = logits.map((logit, index) => {
+    if (!normalizedPlantHint) {
+      return logit;
+    }
+
+    const className = INDEX_TO_CLASS[index] ?? "";
+    return className.startsWith(`${normalizedPlantHint} `) ? logit : Number.NEGATIVE_INFINITY;
+  });
+
+  const hasPlantMask = Boolean(normalizedPlantHint) && maskedLogits.some((logit) => logit !== Number.NEGATIVE_INFINITY);
+  const scoreSource = hasPlantMask ? softmax(maskedLogits) : probs;
+
+  if (normalizedPlantHint) {
+    console.log(`[model] Plant hint: ${normalizedPlantHint}${hasPlantMask ? " (mask applied)" : " (no matching classes, using full distribution)"}`);
+  }
+  */
+
+  const scoreSource = probs;
+
+  const topIndices = Array.from(scoreSource)
+    .map((v, i) => ({ i, v }))
+    .sort((a, b) => b.v - a.v)
+    .slice(0, 10);
+  console.log("[model] Top-10 predictions (RAW, mask disabled):");
+  topIndices.forEach(({ i, v }) => {
+    const cls = INDEX_TO_CLASS[i];
+    console.log(`  [${i}] ${cls}: ${v.toFixed(4)}`);
+  });
+
+  const predictedIdx = scoreSource.indexOf(Math.max(...scoreSource));
+  const rawConfidence = Math.round(probs[predictedIdx] * 100);
+  console.log(`[model] Confidence raw=${rawConfidence}% for [${predictedIdx}] ${INDEX_TO_CLASS[predictedIdx] ?? "unknown"}`);
 
   const className            = INDEX_TO_CLASS[predictedIdx] ?? "unknown";
   const { plantName, disease } = parseClassName(className);
@@ -502,5 +607,5 @@ export async function analyzeLeaf(imageUri, symptomText = "") {
     }
   }
 
-  return { plantName, disease, confidence, treatment, heatmapUri };
+  return { plantName, disease, confidence: rawConfidence, rawConfidence, treatment, heatmapUri };
 }

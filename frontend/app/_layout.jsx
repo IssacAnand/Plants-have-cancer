@@ -36,15 +36,30 @@ export default function RootLayout() {
   useEffect(() => {
     // Run once when the app first mounts
     async function bootstrap() {
+      const appStartTime = Date.now();
+      console.log("[bootstrap] useEffect hook fired, calling bootstrap");
+      console.log("[bootstrap] Starting model and history load...");
+      
       // Kick off the model load in the background
+      console.log("[bootstrap] Calling loadModel()");
+      const loadStart = Date.now();
       const success = await loadModel();
+      const loadElapsed = Date.now() - loadStart;
+      console.log("[bootstrap] loadModel() returned:", success, `(${loadElapsed}ms)`);
       setModelLoaded(success);
 
       // Pre-load scan history so the History tab is ready
+      console.log("[bootstrap] Calling loadRecentScans()");
       await loadRecentScans();
+      console.log("[bootstrap] loadRecentScans() completed");
+      
+      const totalElapsed = Date.now() - appStartTime;
+      console.log(`[bootstrap] ✅ Bootstrap complete in ${totalElapsed}ms`);
     }
 
-    bootstrap();
+    bootstrap().catch((err) => {
+      console.error("[bootstrap] bootstrap() threw:", err?.message ?? err, err?.stack ?? "");
+    });
   }, []); // empty array = run once on mount
 
   return (

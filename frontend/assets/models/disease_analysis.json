@@ -1,0 +1,185 @@
+{
+  "apple black rot": {
+    "analysis": "Apple black rot typically appears as circular, sunken, black lesions on the fruit, surrounded by a velvety greenish-black spore mass. Rot symptoms commonly move from surface lesions into deeper tissue, with decay accelerating under moisture stress. For apple, this can directly reduce marketable produce and increase post-harvest loss risk."
+  },
+  "apple mosaic virus": {
+    "analysis": "Apple mosaic virus causes green and yellow mosaic patterns on leaves, which may distort and curl them. Viral symptoms typically spread through new growth, so fresh leaves may become more mottled, curled, or stunted over time. For apple, this usually means weaker canopy development and less consistent fruit or pod set across the season."
+  },
+  "apple rust": {
+    "analysis": "Apple rust appears as bright orange or yellowish-orange spots on the leaves and fruit of infected trees. Rust pustules usually multiply quickly and release spores, especially when nights are humid and leaves stay wet. For apple, repeated defoliation pressure can reduce grain or fruit filling and shorten the productive window."
+  },
+  "apple scab": {
+    "analysis": "Apple scab is characterized by raised, dark-colored lesions on the fruit's surface, resembling scabs. Scab lesions tend to become rougher and more extensive as wet periods continue. For apple, cosmetic and surface damage can reduce sale grade even when plants remain alive."
+  },
+  "banana panama disease": {
+    "analysis": "Banana Panama disease causes wilting, yellowing of leaves, and decay of the plant's vascular system. Vascular-type diseases often progress from localized yellowing into broader wilting as transport tissues become impaired. For banana, reduced water and nutrient flow can cause rapid vigor decline and major yield setbacks."
+  },
+  "basil downy mildew": {
+    "analysis": "Basil downy mildew appears as yellowing and browning of leaves with fuzzy gray or purple spores. Mildew usually begins as patchy growth and then spreads across leaf surfaces under high humidity and poor airflow. For basil, sustained mildew pressure can slow plant growth and reduce uniformity at harvest."
+  },
+  "bean halo blight": {
+    "analysis": "Bean halo blight appears as small, yellowish halos surrounding dark-brown spots on the leaves and pods. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For bean, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "bean mosaic virus": {
+    "analysis": "Bean mosaic virus causes mottled and distorted leaves in bean plants with distinct mosaic-like patterns. Viral symptoms typically spread through new growth, so fresh leaves may become more mottled, curled, or stunted over time. For bean, this usually means weaker canopy development and less consistent fruit or pod set across the season."
+  },
+  "bean rust": {
+    "analysis": "Bean rust appears as reddish-brown pustules on the leaves and stems of infected plants. Rust pustules usually multiply quickly and release spores, especially when nights are humid and leaves stay wet. For bean, repeated defoliation pressure can reduce grain or fruit filling and shorten the productive window."
+  },
+  "bell pepper leaf spot": {
+    "analysis": "Bell pepper leaf spot is characterized by circular, dark brown lesions with yellow halos on the leaves. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For bell pepper, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "blueberry rust": {
+    "analysis": "Blueberry rust appears as bright orange pustules on the undersides of the leaves. Rust pustules usually multiply quickly and release spores, especially when nights are humid and leaves stay wet. For blueberry, repeated defoliation pressure can reduce grain or fruit filling and shorten the productive window."
+  },
+  "broccoli downy mildew": {
+    "analysis": "Broccoli downy mildew appears as yellow or pale green spots that eventually turn brown or black. Mildew usually begins as patchy growth and then spreads across leaf surfaces under high humidity and poor airflow. For broccoli, sustained mildew pressure can slow plant growth and reduce uniformity at harvest."
+  },
+  "cabbage alternaria leaf spot": {
+    "analysis": "Cabbage alternaria leaf spot appears as dark brown to black spots with concentric rings on the leaves. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For cabbage, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "carrot cavity spot": {
+    "analysis": "Carrot cavity spot appears as small, dark, sunken lesions on the root surface. Rot symptoms commonly move from surface lesions into deeper tissue, with decay accelerating under moisture stress. For carrot, this can directly reduce marketable produce and increase post-harvest loss risk."
+  },
+  "cauliflower alternaria leaf spot": {
+    "analysis": "Cauliflower alternaria leaf spot appears as circular lesions with brown centers and yellow halos on the leaves. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For cauliflower, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "celery anthracnose": {
+    "analysis": "Celery anthracnose appears as small, sunken, dark lesions on the leaves, stems, and petioles. In field conditions, symptoms often begin in patches and expand to nearby tissue when weather favors disease. For celery, prolonged disease pressure can weaken plants and reduce harvest performance."
+  },
+  "celery early blight": {
+    "analysis": "Celery early blight displays small, dark brown, irregularly shaped lesions on the leaves and stems. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For celery, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "celery late blight": {
+    "analysis": "Celery late blight manifests as dark brown to black spots or lesions on the leaves and stems. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For celery, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "cherry leaf spot": {
+    "analysis": "Cherry leaf spot appears as small, circular and dark spots on the leaves of cherry trees. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For cherry, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "cherry powdery mildew": {
+    "analysis": "Cherry powdery mildew appears as white, powdery patches on the leaves, stems, and fruit of cherry trees. Mildew usually begins as patchy growth and then spreads across leaf surfaces under high humidity and poor airflow. For cherry, sustained mildew pressure can slow plant growth and reduce uniformity at harvest."
+  },
+  "citrus canker": {
+    "analysis": "Citrus canker appears as raised, corky lesions on citrus fruit, leaves, and stems. Canker areas often enlarge and crack, which makes affected tissue more vulnerable to secondary invasion. For citrus, cumulative cankers can weaken branches and lower fruit quality over the production cycle."
+  },
+  "citrus greening disease": {
+    "analysis": "Citrus greening disease is characterized by blotchy mottling and yellowing of leaves, stunted growth, and misshapen fruit. Vascular-type diseases often progress from localized yellowing into broader wilting as transport tissues become impaired. For citrus, reduced water and nutrient flow can cause rapid vigor decline and major yield setbacks."
+  },
+  "coffee leaf rust": {
+    "analysis": "Coffee leaf rust appears as yellow-orange powdery spots on the undersides of coffee plant leaves. Rust pustules usually multiply quickly and release spores, especially when nights are humid and leaves stay wet. For coffee, repeated defoliation pressure can reduce grain or fruit filling and shorten the productive window."
+  },
+  "corn gray leaf spot": {
+    "analysis": "Corn gray leaf spot appears as small gray to tan lesions with dark borders on the leaves. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For corn, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "corn northern leaf blight": {
+    "analysis": "Corn northern leaf blight appears as elongated, cigar-shaped lesions with tan centers and dark borders on corn leaves. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For corn, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "corn rust": {
+    "analysis": "Corn rust appears as orange or reddish-brown pustules on the leaves, stems, and husks of infected plants. Rust pustules usually multiply quickly and release spores, especially when nights are humid and leaves stay wet. For corn, repeated defoliation pressure can reduce grain or fruit filling and shorten the productive window."
+  },
+  "corn smut": {
+    "analysis": "Corn smut appears as large, gray-black, distorted galls or tumors on the ears, leaves, and stalks of corn plants. Smut infections intensify as galls enlarge and spore masses develop in reproductive or structural tissues. For corn, direct damage to harvestable parts can significantly lower both quantity and market quality."
+  },
+  "cucumber angular leaf spot": {
+    "analysis": "Cucumber angular leaf spot appears as small, water-soaked lesions that develop into angular, yellowish-brown spots on leaves. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For cucumber, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "cucumber bacterial wilt": {
+    "analysis": "Cucumber bacterial wilt appears as wilting and yellowing leaves, with brown vascular discoloration in the stems. Vascular-type diseases often progress from localized yellowing into broader wilting as transport tissues become impaired. For cucumber, reduced water and nutrient flow can cause rapid vigor decline and major yield setbacks."
+  },
+  "cucumber powdery mildew": {
+    "analysis": "Cucumber powdery mildew appears as white powdery patches on the leaves and stems of the plant. Mildew usually begins as patchy growth and then spreads across leaf surfaces under high humidity and poor airflow. For cucumber, sustained mildew pressure can slow plant growth and reduce uniformity at harvest."
+  },
+  "eggplant cercospora leaf spot": {
+    "analysis": "Circular or oval-shaped purple or brown spots with yellow halos on the leaves of eggplant. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For eggplant, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "garlic leaf blight": {
+    "analysis": "Garlic leaf blight appears as brown and yellow lesions on the leaves, eventually leading to their withering. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For garlic, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "garlic rust": {
+    "analysis": "Garlic rust is characterized by orange pustules or lesions on the leaves and stems of the plant. Rust pustules usually multiply quickly and release spores, especially when nights are humid and leaves stay wet. For garlic, repeated defoliation pressure can reduce grain or fruit filling and shorten the productive window."
+  },
+  "ginger leaf spot": {
+    "analysis": "Ginger leaf spot appears as small, dark brown to black spots on the leaves. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For ginger, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "ginger sheath blight": {
+    "analysis": "Ginger sheath blight appears as dark brown lesions with rotting tissue surrounded by a white cottony mycelium. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For ginger, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "grape black rot": {
+    "analysis": "Grape black rot appears as small black circular lesions on the fruit, leaves, and stems. Rot symptoms commonly move from surface lesions into deeper tissue, with decay accelerating under moisture stress. For grape, this can directly reduce marketable produce and increase post-harvest loss risk."
+  },
+  "grape downy mildew": {
+    "analysis": "Grape downy mildew appears as fuzzy, grayish-white patches on the undersides of leaves. Mildew usually begins as patchy growth and then spreads across leaf surfaces under high humidity and poor airflow. For grape, sustained mildew pressure can slow plant growth and reduce uniformity at harvest."
+  },
+  "grape leaf spot": {
+    "analysis": "Grape leaf spot appears as small, dark, circular lesions with a yellow halo on the leaves. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For grape, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "grapevine leafroll disease": {
+    "analysis": "Grapevine leafroll disease causes infected leaves to exhibit a reddish discoloration along the leaf veins. In field conditions, symptoms often begin in patches and expand to nearby tissue when weather favors disease. For grapevine, prolonged disease pressure can weaken plants and reduce harvest performance."
+  },
+  "lettuce downy mildew": {
+    "analysis": "Lettuce downy mildew appears as yellowish-green patches on the upper surface of leaves, with a fuzzy grayish growth on the underside. Mildew usually begins as patchy growth and then spreads across leaf surfaces under high humidity and poor airflow. For lettuce, sustained mildew pressure can slow plant growth and reduce uniformity at harvest."
+  },
+  "lettuce mosaic virus": {
+    "analysis": "Lettuce mosaic virus causes mosaic patterns on the leaves with light and dark green patches. Viral symptoms typically spread through new growth, so fresh leaves may become more mottled, curled, or stunted over time. For lettuce, this usually means weaker canopy development and less consistent fruit or pod set across the season."
+  },
+  "maple tar spot": {
+    "analysis": "Maple tar spot appears as black, tar-like raised spots on the leaves of maple trees. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For maple, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "peach leaf curl": {
+    "analysis": "Peach leaf curl causes red, curled, and distorted leaves with a blister-like appearance on peach trees. In field conditions, symptoms often begin in patches and expand to nearby tissue when weather favors disease. For peach, prolonged disease pressure can weaken plants and reduce harvest performance."
+  },
+  "plum leaf spot": {
+    "analysis": "Plum leaf spot appears as circular, dark purple or black spots on the leaves. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For plum, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "plum pocket disease": {
+    "analysis": "Plum pocket disease is characterized by swollen, malformed, and hollowed-out fruit with a powdery grey appearance. In field conditions, symptoms often begin in patches and expand to nearby tissue when weather favors disease. For plum, prolonged disease pressure can weaken plants and reduce harvest performance."
+  },
+  "potato early blight": {
+    "analysis": "Potato early blight shows distinct concentric rings with dark brown lesions on leaves and stems. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For potato, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "potato late blight": {
+    "analysis": "Potato late blight appears as dark, water-soaked lesions on leaves, stems, and tubers. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For potato, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "rice blast": {
+    "analysis": "Rice blast appears as small, oval lesions with gray centers and brown borders on rice leaves. In field conditions, symptoms often begin in patches and expand to nearby tissue when weather favors disease. For rice, prolonged disease pressure can weaken plants and reduce harvest performance."
+  },
+  "rice sheath blight": {
+    "analysis": "Rice sheath blight appears as elongated lesions with a dark brown border and white cottony growth. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For rice, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "squash powdery mildew": {
+    "analysis": "Squash powdery mildew appears as white, powdery spots or patches on the leaves and stems. Mildew usually begins as patchy growth and then spreads across leaf surfaces under high humidity and poor airflow. For squash, sustained mildew pressure can slow plant growth and reduce uniformity at harvest."
+  },
+  "strawberry anthracnose": {
+    "analysis": "Strawberry anthracnose appears as dark, sunken lesions on the fruits, leaves, and stems of the plant. In field conditions, symptoms often begin in patches and expand to nearby tissue when weather favors disease. For strawberry, prolonged disease pressure can weaken plants and reduce harvest performance."
+  },
+  "strawberry leaf scorch": {
+    "analysis": "Strawberry leaf scorch appears as reddish-brown necrotic lesions that often have a purple border. In field conditions, symptoms often begin in patches and expand to nearby tissue when weather favors disease. For strawberry, prolonged disease pressure can weaken plants and reduce harvest performance."
+  },
+  "tobacco mosaic virus": {
+    "analysis": "Tobacco mosaic virus causes distinct light and dark green mottling or mosaics on the leaves. Viral symptoms typically spread through new growth, so fresh leaves may become more mottled, curled, or stunted over time. For tobacco, this usually means weaker canopy development and less consistent fruit or pod set across the season."
+  },
+  "tomato bacterial leaf spot": {
+    "analysis": "Tomato bacterial leaf spot appears as dark, water-soaked lesions surrounded by a yellow halo on the leaves. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For tomato, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "tomato early blight": {
+    "analysis": "Tomato early blight appears as brown, concentric lesions with a darker center surrounded by a yellow halo. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For tomato, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "tomato late blight": {
+    "analysis": "Tomato late blight appears as dark, water-soaked lesions on leaves, stems, and fruits, often covered with a fuzzy, white mold. Blight lesions often expand fast and merge into larger dead patches during warm, wet weather. For tomato, severe canopy loss can cut photosynthetic capacity and reduce final harvest weight and quality."
+  },
+  "tomato leaf mold": {
+    "analysis": "Tomato leaf mold appears as yellowish-green spots or patches with fuzzy gray or brown mold on the underside. In field conditions, symptoms often begin in patches and expand to nearby tissue when weather favors disease. For tomato, prolonged disease pressure can weaken plants and reduce harvest performance."
+  },
+  "tomato mosaic virus": {
+    "analysis": "Tomato mosaic virus causes distinct mottled patterns of light and dark green on tomato leaves. Viral symptoms typically spread through new growth, so fresh leaves may become more mottled, curled, or stunted over time. For tomato, this usually means weaker canopy development and less consistent fruit or pod set across the season."
+  },
+  "tomato septoria leaf spot": {
+    "analysis": "Tomato septoria leaf spot appears as numerous small, dark brown spots with yellow halos on leaves. Spot lesions generally start small and then coalesce, creating larger damaged areas when foliage remains wet. For tomato, widespread spotting can reduce active leaf area and limit biomass and yield formation."
+  },
+  "tomato yellow leaf curl virus": {
+    "analysis": "Tomato yellow leaf curl virus causes yellowing and curling of tomato leaves with stunted plant growth. Viral symptoms typically spread through new growth, so fresh leaves may become more mottled, curled, or stunted over time. For tomato, this usually means weaker canopy development and less consistent fruit or pod set across the season."
+  },
+  "zucchini yellow mosaic virus": {
+    "analysis": "Zucchini yellow mosaic virus causes mottled yellowing and mosaic patterns on the leaves of infected plants. Viral symptoms typically spread through new growth, so fresh leaves may become more mottled, curled, or stunted over time. For zucchini, this usually means weaker canopy development and less consistent fruit or pod set across the season."
+  }
+}
