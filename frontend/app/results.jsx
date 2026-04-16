@@ -78,7 +78,7 @@ export default function ResultsScreen() {
       treatment:   result.treatment,
     });
     resetSession();
-    router.replace("/(tabs)/index");
+    router.replace("/(tabs)");
   }
 
   function handleBack() {
