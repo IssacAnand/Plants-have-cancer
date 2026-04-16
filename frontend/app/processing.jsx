@@ -31,6 +31,7 @@ export default function ProcessingScreen() {
 
   // Grab what we need from the store
   const capturedImageUri  = usePlantStore((state) => state.capturedImageUri);
+  const capturedPlantName = usePlantStore((state) => state.capturedPlantName);
   const capturedText      = usePlantStore((state) => state.capturedText);
   const isModelLoaded     = usePlantStore((state) => state.isModelLoaded);
   const setAnalysisResult = usePlantStore((state) => state.setAnalysisResult);
@@ -65,10 +66,18 @@ export default function ProcessingScreen() {
 
     hasStarted.current = true;
 
+    const plantText = capturedPlantName?.trim();
+    const symptomText = capturedText?.trim();
+    const combinedText = plantText
+      ? `${plantText} plant${symptomText ? `. Symptoms: ${symptomText}` : ""}`
+      : (symptomText ?? "");
+
+    console.log("[processing] Inference text:", combinedText);
+
     async function runInference() {
       try {
         // analyzeLeaf() runs three ONNX sessions (image + text + MLP)
-        const result = await analyzeLeaf(capturedImageUri, capturedText ?? "");
+        const result = await analyzeLeaf(capturedImageUri, combinedText, plantText ?? "");
 
         // 1. Store the result so the Results screen can read it
         setAnalysisResult(result);
@@ -77,7 +86,7 @@ export default function ProcessingScreen() {
         await addScan({
           plantName:   result.plantName,
           imageUri:    capturedImageUri,
-          symptomText: capturedText ?? "",
+          symptomText: combinedText,
           disease:     result.disease,
           confidence:  result.confidence,
           treatment:   result.treatment,
@@ -96,7 +105,7 @@ export default function ProcessingScreen() {
     }
 
     runInference();
-  }, [addScan, capturedImageUri, capturedText, isModelLoaded, router, setAnalysisResult]);
+  }, [addScan, capturedImageUri, capturedPlantName, capturedText, isModelLoaded, router, setAnalysisResult]);
 
   // ── UI ────────────────────────────────────────────────────────────────────
   return (
@@ -125,6 +134,7 @@ export default function ProcessingScreen() {
       <View className="mt-10 w-full bg-white rounded-2xl p-5 shadow-sm">
         {[
           { label: "Loading image",          done: true  },
+          { label: "Preparing plant name",   done: Boolean(capturedPlantName?.trim()) },
           { label: "Preparing symptom text", done: Boolean(capturedText?.trim()) },
           { label: "Running AI model",       done: false },
           { label: "Preparing results",      done: false },

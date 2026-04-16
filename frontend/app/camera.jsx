@@ -5,6 +5,7 @@ import { View, Text, TouchableOpacity, SafeAreaView, Image, PanResponder } from 
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { RotateCcw } from "lucide-react-native";
+import { File, Directory, Paths } from "expo-file-system";
 
 import usePlantStore from "../store/usePlantStore";
 
@@ -101,7 +102,19 @@ export default function CameraScreen() {
     setIsTaking(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
-      setCapturedImage(photo.uri);
+
+      const capturesDir = new Directory(Paths.document, "captures");
+      capturesDir.create({ intermediates: true, idempotent: true });
+
+      const sourceFile = new File(photo.uri);
+      const fileExtension = sourceFile.extension ? `.${sourceFile.extension}` : ".jpg";
+      const persistentFile = new File(
+        capturesDir,
+        `scan-${Date.now()}${fileExtension}`
+      );
+
+      sourceFile.copy(persistentFile);
+      setCapturedImage(persistentFile.uri);
     } catch (err) {
       console.error("Capture failed:", err);
     } finally {
