@@ -43,3 +43,6 @@ frontend/android/
 # pycache
 __pycache__/
 *.pyc
+
+# model checkpoints
+backend/checkpoints/
