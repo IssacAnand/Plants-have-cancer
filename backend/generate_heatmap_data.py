@@ -1,21 +1,3 @@
-"""
-Step 1: Generate training data for the heatmap generator model.
-
-For each training image, this script:
-  1. Runs the MobileViT backbone → spatial_feat (C, H, W)
-  2. Runs full HiResCAM (gradient-based) → ground-truth heatmap (1, H_out, W_out)
-  3. Saves (spatial_feat, heatmap) pairs to disk
-
-Usage:
-  cd backend
-  python generate_heatmap_data.py
-
-Output:
-  ./checkpoints/heatmap_training_data/
-    spatial_feats.pt   — tensor of shape (N, C, H_s, W_s)
-    heatmaps.pt        — tensor of shape (N, 1, 320, 320)
-"""
-
 import os
 import json
 import glob

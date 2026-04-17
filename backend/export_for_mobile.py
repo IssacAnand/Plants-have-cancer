@@ -1,29 +1,3 @@
-"""
-Export the trained multimodal plant classifier to three ONNX models
-for fully offline mobile inference.
-
-Models exported
-───────────────
-  image_backbone.onnx  — MobileViTv2_150; pooled embedding + spatial feature map
-  text_encoder.onnx    — fine-tuned agriculture-BERT; returns [CLS] embedding
-                         (INT8-quantised to ~105 MB if onnxruntime is available)
-  mlp.onnx             — MultimodalMLP fusion head; returns 89-class logits
-
-Asset files
-───────────
-  label_map.json           — {class_name: int} index
-  treatments.json          — {class_name: description_string}
-  tokenizer/vocab.json     — {token: id} WordPiece vocabulary for the JS tokenizer
-
-On-device inference flow (modelInference.js)
-────────────────────────────────────────────
-  user image  → image_backbone.onnx → img_emb (1,768) + spatial_feat (1,C,H,W)
-  user text   → JS tokenizer        → input_ids / attention_mask
-               → text_encoder.onnx  → text_emb (1,768)
-  both        → mlp.onnx            → logits (1,89) → argmax → class label
-  spatial_feat                      → mean-CAM → jet colormap → heatmap JPEG
-"""
-
 import json
 import shutil
 import sys
